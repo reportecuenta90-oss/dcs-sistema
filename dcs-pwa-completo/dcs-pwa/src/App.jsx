@@ -116,8 +116,8 @@ const initRepIng = [
 
 const MENU = {
   admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"Proyectos PH"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"nueva",icon:"+",label:"Nueva Orden"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"misDiarios",icon:"📚",label:"Diarios de Campo"}],
-  tecnico:  [{id:"ordenes",icon:"≡",label:"Mis Órdenes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
-  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"reporteIngeniera",icon:"◈",label:"Mis Reportes"},{id:"nuevoReporteIngeniera",icon:"+",label:"Nuevo Reporte"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"mensajes",icon:"💬",label:"Mensajes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"}],
+  tecnico:  [{id:"misOrdenes",icon:"≡",label:"Mis Órdenes"},{id:"reportesIng",icon:"◈",label:"Reportes Ing."},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
+  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"reporteIngeniera",icon:"◈",label:"Mis Reportes"},{id:"nuevoReporteIngeniera",icon:"+",label:"Nuevo Reporte"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"}],
   conserje: [{id:"nuevoReporte",icon:"+",label:"Nuevo Reporte"},{id:"reportesConserje",icon:"≡",label:"Mis Reportes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"misNotificaciones",icon:"🔔",label:"Notificaciones"}],
 };
 
@@ -672,10 +672,20 @@ export default function App() {
   function login(){
     const all=[...USUARIOS,...conserjes.filter(c=>!USUARIOS.find(u=>u.id===c.id))];
     const u=all.find(x=>x.correo===loginForm.correo&&x.pass===loginForm.pass);
-    if(u){setUsuario(u);lsSet("dcs_session",u);setLoginError("");setVista(u.rol==="conserje"?"nuevoReporte":u.rol==="tecnico"?"ordenes":"dashboard");}
+    if(u){setUsuario(u);lsSet("dcs_session",u);setLoginError("");setVista(u.rol==="conserje"?"nuevoReporte":u.rol==="tecnico"?"misOrdenes":"dashboard");}
     else setLoginError("Correo o contraseña incorrectos.");
   }
   function logout(){setUsuario(null);lsSet("dcs_session",null);setVista("dashboard");setSelOrden(null);}
+
+  // Helper: format time as AM/PM
+  const fmtHora = (h) => {
+    if(!h) return "";
+    const [hh,mm] = h.split(":");
+    const hour = parseInt(hh,10);
+    const ampm = hour>=12?"PM":"AM";
+    const h12 = hour%12||12;
+    return `${h12}:${mm} ${ampm}`;
+  };
 
   const misOrdenes = useMemo(()=>usuario?.rol==="tecnico"?ordenes.filter(o=>o.asignadoA===usuario.id):ordenes,[ordenes,usuario]);
   const ordenesFiltradas = useMemo(()=>misOrdenes
@@ -1556,7 +1566,7 @@ export default function App() {
 
   function navTo(id){setVista(id);setSelOrden(null);setSelReporte(null);setSelInc(null);setPhFiltro("Todos");setEstado("Todos");setTipo("Todos");setTecFiltro("Todos");setFechaDesde("");setFechaHasta("");setFiltrosRep({urgencia:"Todos",fecha:""});}
 
-  const vistaLabel={dashboard:"Dashboard",phs:"Proyectos PH",ordenes:"Órdenes de Trabajo",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Mis Reportes" : "Reportes de Conserjes",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",mensajes:"Mensajes",calendario:"Calendario de Órdenes"};
+  const vistaLabel={dashboard:"Dashboard",phs:"Proyectos PH",ordenes:"Órdenes de Trabajo",misOrdenes:"Mis Órdenes",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Mis Reportes" : "Reportes de Conserjes",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",mensajes:"Mensajes",calendario:"Calendario de Órdenes"};
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
 
   // ── LOADING DB ─────────────────────────────────────────────────────────────
@@ -1713,8 +1723,7 @@ export default function App() {
         tr:hover td{background:${T.surfaceHover}}
         button:hover{opacity:0.88}
         @media(max-width:767px){
-          * { word-break:break-word; overflow-wrap:break-word; }
-          table { display:block; overflow-x:auto; }
+          .no-break { white-space:nowrap !important; }
         }
       `}</style>
       {/* ── SIDEBAR ── */}
@@ -2349,39 +2358,67 @@ export default function App() {
                 </span>
               </div>
 
-              {/* Tabla */}
-              <div style={s.cardFlush}>
-                <table style={{width:"100%",borderCollapse:"collapse"}}>
-                  <thead>
-                    <tr>{["PH / Proyecto","Tipo","Técnico","Estado",""].map((h,i)=><th key={i} style={s.th}>{h}</th>)}</tr>
-                  </thead>
-                  <tbody>
-                    {ordenesFiltradas.length===0 && (
-                      <tr><td colSpan={5} style={{textAlign:"center",padding:40,color:T.textTertiary,fontSize:12}}>No hay órdenes.</td></tr>
-                    )}
-                    {ordenesFiltradas.map(o=>{
-                      const tec=TECNICOS.find(t2=>t2.id===o.asignadoA);
-                      return (
-                        <tr key={o.id} style={{cursor:"pointer"}} onClick={()=>{setSelOrden(o);setVista("detalle")}}>
-                          <td style={s.td}>
-                            <div style={{fontSize:12,fontWeight:600,color:T.textPrimary}}>{o.ph}</div>
-                            <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{o.ubicacion}</div>
-                          </td>
-                          <td style={s.td}><div style={{fontSize:12,color:T.textSecondary}}>{o.tipo}</div></td>
-                          <td style={s.td}>
-                            {tec
-                              ? <div style={{fontSize:12,color:T.textSecondary}}>{tec.nombre}</div>
-                              : <span style={{fontSize:11,color:T.textTertiary,fontStyle:"italic"}}>Sin asignar</span>
-                            }
-                          </td>
-                          <td style={s.td}><EstadoBadge estado={o.estado}/></td>
-                          <td style={{...s.td,fontSize:14,color:T.textTertiary,textAlign:"right"}}>›</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {/* Tabla / Tarjetas responsive */}
+              {isMobile ? (
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {ordenesFiltradas.length===0 && (
+                    <div style={{textAlign:"center",padding:40,color:T.textTertiary,fontSize:12}}>No hay órdenes.</div>
+                  )}
+                  {ordenesFiltradas.map(o=>{
+                    const tec=TECNICOS.find(t2=>t2.id===o.asignadoA);
+                    return (
+                      <div key={o.id} onClick={()=>{setSelOrden(o);setVista("detalle")}}
+                        style={{background:T.surfacePrimary,borderRadius:8,padding:"12px 14px",
+                          border:`1px solid ${T.borderDefault}`,cursor:"pointer",
+                          display:"flex",flexDirection:"column",gap:6}}>
+                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                          <div style={{fontSize:13,fontWeight:700,color:T.textPrimary}}>{o.ph}</div>
+                          <EstadoBadge estado={o.estado}/>
+                        </div>
+                        <div style={{fontSize:11,color:T.textTertiary}}>{o.ubicacion}</div>
+                        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:2}}>
+                          <span style={{fontSize:11,color:T.textSecondary,background:T.surfaceSecond,padding:"2px 8px",borderRadius:4}}>{o.tipo}</span>
+                          <span style={{fontSize:11,color:T.textSecondary}}>👷 {tec?tec.nombre:"Sin asignar"}</span>
+                          <span style={{fontSize:11,color:T.textTertiary}}>{o.fecha}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={s.cardFlush}>
+                  <table style={{width:"100%",borderCollapse:"collapse"}}>
+                    <thead>
+                      <tr>{["PH / Proyecto","Tipo","Técnico","Estado",""].map((h,i)=><th key={i} style={s.th}>{h}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {ordenesFiltradas.length===0 && (
+                        <tr><td colSpan={5} style={{textAlign:"center",padding:40,color:T.textTertiary,fontSize:12}}>No hay órdenes.</td></tr>
+                      )}
+                      {ordenesFiltradas.map(o=>{
+                        const tec=TECNICOS.find(t2=>t2.id===o.asignadoA);
+                        return (
+                          <tr key={o.id} style={{cursor:"pointer"}} onClick={()=>{setSelOrden(o);setVista("detalle")}}>
+                            <td style={s.td}>
+                              <div style={{fontSize:12,fontWeight:600,color:T.textPrimary}}>{o.ph}</div>
+                              <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{o.ubicacion}</div>
+                            </td>
+                            <td style={s.td}><div style={{fontSize:12,color:T.textSecondary}}>{o.tipo}</div></td>
+                            <td style={s.td}>
+                              {tec
+                                ? <div style={{fontSize:12,color:T.textSecondary}}>{tec.nombre}</div>
+                                : <span style={{fontSize:11,color:T.textTertiary,fontStyle:"italic"}}>Sin asignar</span>
+                              }
+                            </td>
+                            <td style={s.td}><EstadoBadge estado={o.estado}/></td>
+                            <td style={{...s.td,fontSize:14,color:T.textTertiary,textAlign:"right"}}>›</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
@@ -2989,16 +3026,23 @@ export default function App() {
                           const rec=new SR();
                           rec.lang="es-PA";rec.continuous=true;rec.interimResults=true;
                           rec.onstart=()=>setFormRep(p=>({...p,_escuchando:true}));
-                          rec.onend=()=>setFormRep(p=>({...p,_escuchando:false}));
+
                           rec.onerror=()=>{setFormRep(p=>({...p,_escuchando:false}));addToast("No se pudo acceder al micrófono","warning");};
+                          let _acum="";
                           rec.onresult=(e)=>{
-                            let final="",interim="";
-                            for(let i=e.resultIndex;i<e.results.length;i++){
-                              if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+                            let interim="";
+                            _acum="";
+                            for(let i=0;i<e.results.length;i++){
+                              if(e.results[i].isFinal) _acum+=e.results[i][0].transcript+" ";
                               else interim+=e.results[i][0].transcript;
                             }
-                            if(final) setFormRep(p=>({...p,observacion:(p.observacion?p.observacion+" ":"")+final.trim(),_interim:""}));
-                            else setFormRep(p=>({...p,_interim:interim}));
+                            setFormRep(p=>({...p,_acum:_acum.trim(),_interim:interim}));
+                          };
+                          rec.onend=()=>{
+                            setFormRep(p=>({...p,
+                              observacion:((p.observacion||"").trim()+" "+(p._acum||"")).trim(),
+                              _acum:"",_interim:"",_escuchando:false
+                            }));
                           };
                           window._dcsSpeech=rec;rec.start();
                         }} style={{
@@ -3016,7 +3060,7 @@ export default function App() {
                     })()}
                   </div>
                   <textarea
-                    value={(formRep.observacion||"")+(formRep._interim?` ${formRep._interim}`:"")}
+                    value={formRep._escuchando?((formRep.observacion||"").trim()+" "+(formRep._acum||"")+" "+(formRep._interim||"")).trim():(formRep.observacion||"")}
                     onChange={e=>setFormRep(p=>({...p,observacion:e.target.value,_interim:""}))}
                     rows={4}
                     placeholder="Describe con detalle lo que observaste, pasó o atendiste en el turno..."
@@ -3248,9 +3292,9 @@ export default function App() {
                     <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10}}>
                       <div style={{flex:1,minWidth:0}}>
                         {/* PH + fecha */}
-                        <div style={{fontSize:13,fontWeight:700,color:T.textPrimary}}>{r.ph}</div>
-                        <div style={{fontSize:11,color:T.textTertiary,marginTop:2,fontFamily:"'IBM Plex Mono',monospace"}}>
-                          {usuario.rol!=="conserje" && `${r.conserje} · `}{r.fecha} {r.hora}{r.turno?` · ${r.turno}`:""}
+                        <div style={{fontSize:13,fontWeight:700,color:T.textPrimary,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.ph}</div>
+                        <div style={{fontSize:11,color:T.textTertiary,marginTop:2,fontFamily:"'IBM Plex Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                          {usuario.rol!=="conserje" && `${r.conserje} · `}{r.fecha}{r.hora?` ${fmtHora(r.hora)}`:""}{r.turno?` · ${r.turno}`:""}
                         </div>
                         {/* Observación resumida */}
                         <div style={{fontSize:12,color:T.textSecondary,lineHeight:1.6,marginTop:6}}>
@@ -3673,6 +3717,60 @@ export default function App() {
             </div>
           )}
 
+          {/* ── MIS ÓRDENES TÉCNICO ── */}
+          {vista==="misOrdenes" && usuario.rol==="tecnico" && (
+            <div>
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                {misOrdenes.length===0 && (
+                  <div style={{textAlign:"center",padding:40,color:T.textTertiary,fontSize:12}}>No tienes órdenes asignadas.</div>
+                )}
+                {misOrdenes.map(o=>(
+                  <div key={o.id} onClick={()=>{setSelOrden(o);setVista("detalle")}}
+                    style={{background:T.surfacePrimary,borderRadius:8,padding:"12px 14px",
+                      border:`1px solid ${T.borderDefault}`,cursor:"pointer",
+                      display:"flex",flexDirection:"column",gap:6}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                      <div style={{fontSize:13,fontWeight:700,color:T.textPrimary,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,marginRight:8}}>{o.ph}</div>
+                      <EstadoBadge estado={o.estado}/>
+                    </div>
+                    <div style={{fontSize:11,color:T.textTertiary}}>{o.ubicacion}</div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:2}}>
+                      <span style={{fontSize:11,color:T.textSecondary,background:T.surfaceSecond,padding:"2px 8px",borderRadius:4}}>{o.tipo}</span>
+                      <span style={{fontSize:11,color:T.textTertiary}}>{o.fecha}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── REPORTES ING (visible al técnico) ── */}
+          {vista==="reportesIng" && usuario.rol==="tecnico" && (
+            <div style={{maxWidth:680}}>
+              <div style={{marginBottom:12}}>
+                <span style={{fontSize:11,color:T.textTertiary}}>{repIng.length} reporte{repIng.length!==1?"s":""} de la ingeniera</span>
+              </div>
+              {repIng.length===0 && <p style={{textAlign:"center",color:T.textTertiary,padding:"40px 0",fontSize:12}}>No hay reportes aún.</p>}
+              {repIng.map(r=>(
+                <div key={r.id} style={{...s.card,marginBottom:10,cursor:"default"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:13,fontWeight:700,color:T.textPrimary,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.ph}</div>
+                      <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{r.tipo} · {r.fecha}</div>
+                    </div>
+                    <span style={{fontSize:10,padding:"2px 8px",borderRadius:4,
+                      background:r.estado==="Aprobado"?T.successMuted:T.warningMuted,
+                      color:r.estado==="Aprobado"?T.successText:T.warningText,
+                      fontWeight:700,flexShrink:0}}>{r.estado||"Pendiente"}</span>
+                  </div>
+                  {r.descripcion && <div style={{fontSize:12,color:T.textSecondary,marginTop:8,lineHeight:1.5}}>{r.descripcion}</div>}
+                  {r.hallazgos && <div style={{fontSize:12,color:T.textSecondary,marginTop:6}}><strong>Hallazgos:</strong> {r.hallazgos}</div>}
+                  {r.recomendaciones && <div style={{fontSize:12,color:T.warningBase,marginTop:6,padding:"6px 10px",background:T.warningMuted,borderRadius:4}}>💡 {r.recomendaciones}</div>}
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* ── MIS REPORTES INGENIERA ── */}
           {vista==="reporteIngeniera" && usuario.rol==="ingeniera" && (
             <div style={{maxWidth:680}}>
@@ -3699,7 +3797,7 @@ export default function App() {
                         </span>
                         <div style={{fontSize:14,fontWeight:700,color:T.textPrimary}}>{r.ph}</div>
                         <div style={{fontSize:11,color:T.textTertiary,marginTop:2,fontFamily:"'IBM Plex Mono',monospace"}}>
-                          {r.autor||usuario.nombre} · {r.fecha}{r.hora?` · ${r.hora}`:""}
+                          {r.autor||usuario.nombre} · {r.fecha}{r.hora?` · ${fmtHora(r.hora)}`:""}
                         </div>
                       </div>
                       <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
@@ -4618,7 +4716,7 @@ export default function App() {
                               <div style={{flex:1}}>
                                 <div style={{fontSize:13,fontWeight:700,color:T.textPrimary}}>{b.ph}</div>
                                 <div style={{fontSize:11,color:T.textTertiary,marginTop:1}}>
-                                  {b.hora?`⏰ ${b.hora} · `:""}{(b.fotos||[]).length} foto{(b.fotos||[]).length!==1?"s":""}
+                                  {b.hora?`⏰ ${fmtHora(b.hora)} · `:""}{(b.fotos||[]).length} foto{(b.fotos||[]).length!==1?"s":""}
                                   {b.hallazgos?" · 🔍":""}{b.recomendaciones?" · 💡":""}
                                 </div>
                               </div>
