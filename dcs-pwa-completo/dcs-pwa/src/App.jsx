@@ -375,7 +375,7 @@ export default function App() {
   const [dark, setDark] = useState(() => lsGet("dcs_dark", true));
   const T = dark ? DARK : LIGHT;
 
-  const [usuario,setUsuario]       = useState(null);
+  const [usuario,setUsuario]       = useState(() => lsGet("dcs_session", null));
   const [ordenes,setOrdenes]       = useState(() => lsGet("dcs_ordenes", initOrdenes));
   const [reportes,setReportes]     = useState(() => lsGet("dcs_reportes", initReportes));
   const [repIng,setRepIng]         = useState(() => lsGet("dcs_repIng", initRepIng));
@@ -672,10 +672,10 @@ export default function App() {
   function login(){
     const all=[...USUARIOS,...conserjes.filter(c=>!USUARIOS.find(u=>u.id===c.id))];
     const u=all.find(x=>x.correo===loginForm.correo&&x.pass===loginForm.pass);
-    if(u){setUsuario(u);setLoginError("");setVista(u.rol==="conserje"?"nuevoReporte":u.rol==="tecnico"?"ordenes":"dashboard");}
+    if(u){setUsuario(u);lsSet("dcs_session",u);setLoginError("");setVista(u.rol==="conserje"?"nuevoReporte":u.rol==="tecnico"?"ordenes":"dashboard");}
     else setLoginError("Correo o contraseña incorrectos.");
   }
-  function logout(){setUsuario(null);setVista("dashboard");setSelOrden(null);}
+  function logout(){setUsuario(null);lsSet("dcs_session",null);setVista("dashboard");setSelOrden(null);}
 
   const misOrdenes = useMemo(()=>usuario?.rol==="tecnico"?ordenes.filter(o=>o.asignadoA===usuario.id):ordenes,[ordenes,usuario]);
   const ordenesFiltradas = useMemo(()=>misOrdenes
@@ -1594,18 +1594,18 @@ export default function App() {
               <img src={LOGO_B64} alt="Logo" style={{width:"100%",height:"100%",objectFit:"contain"}}/>
             </div>
             <div>
-              <div style={{
-                fontSize:17,fontWeight:700,
-                color:T.textPrimary,
-                letterSpacing:"-0.3px",lineHeight:1.1,
-              }}>Sistema de Gestión</div>
+              <div style={{display:"flex",alignItems:"center",gap:6}}>
+                <div style={{
+                  fontSize:17,fontWeight:700,
+                  color:T.textPrimary,
+                  letterSpacing:"-0.3px",lineHeight:1.1,
+                }}>Sistema de Gestión</div>
+                <div style={{fontSize:14}}>{dbOnline?"😊":"😢"}</div>
+              </div>
               <div style={{
                 fontSize:11,color:T.textTertiary,
                 marginTop:3,letterSpacing:"0.3px",
               }}>Fundación Buenaventura · DC&amp;S</div>
-              <div style={{marginTop:4,fontSize:14}}>
-                {dbOnline?"😊":"😢"}
-              </div>
             </div>
           </div>
 
