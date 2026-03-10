@@ -1,9 +1,8 @@
-
-        import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 
 // ── Supabase cliente ──────────────────────────────────────────────────────────
 const SUPA_URL = "https://irldxqsbfczabbvdjnkg.supabase.co";
-const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlybGR4cXNiZmN6YWJidmRqbmtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzk0NTgsImV4cCI6MjA4ODY1NTQ1OH0.OHghV0zicn6wIsOqcBuw3qu6pBTkBy5o50mXkSHTmb0";
+const SUPA_KEY = "sb_publishable_KnmuwUjjvYNRnQVIDcAMUA_WYTZHvi7";
 
 const supa = {
   _h: { "Content-Type": "application/json", "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY },
@@ -394,7 +393,7 @@ export default function App() {
   const [sidebarOpen,setSidebar]   = useState(true);
   const [isMobile, setIsMobile] = useState(() => typeof window!=="undefined" && window.innerWidth < 768);
   useEffect(()=>{
-    const check = ()=>{ setIsMobile(window.innerWidth<768); };
+    const check = ()=>setIsMobile(window.innerWidth<768);
     window.addEventListener("resize",check);
     if(window.innerWidth<768) setSidebar(false);
     return ()=>window.removeEventListener("resize",check);
@@ -1714,9 +1713,6 @@ export default function App() {
         tr:hover td{background:${T.surfaceHover}}
         button:hover{opacity:0.88}
         @media(max-width:767px){
-          .kpi-card{padding:10px !important;}
-          .kpi-val{font-size:26px !important;}
-          .topbar-search{display:none !important;}
           * { word-break:break-word; overflow-wrap:break-word; }
           table { display:block; overflow-x:auto; }
         }
@@ -1728,15 +1724,15 @@ export default function App() {
       <div style={{
         background:T.sidebarBg,
         display:"flex", flexDirection:"column",
-        width: isMobile?(sidebarOpen?220:0):(sidebarOpen?220:56),
-        minWidth: isMobile?(sidebarOpen?220:0):(sidebarOpen?220:56),
+        width:isMobile?(sidebarOpen?220:0):(sidebarOpen?220:56),
+        minWidth:isMobile?(sidebarOpen?220:0):(sidebarOpen?220:56),
         transition:"width .2s ease",
         flexShrink:0, overflow:"hidden",
-        borderRight: (isMobile&&!sidebarOpen)?"none":`1px solid ${T.sidebarBorder}`,
-        position: isMobile?"fixed":"relative",
+        borderRight:(isMobile&&!sidebarOpen)?"none":`1px solid ${T.sidebarBorder}`,
+        position:isMobile?"fixed":"relative",
         top:0, left:0,
-        height: isMobile?"100vh":"auto",
-        zIndex: isMobile?99:undefined,
+        height:isMobile?"100vh":"auto",
+        zIndex:isMobile?99:undefined,
       }}>
         {/* Logo */}
         <div style={{
@@ -4360,7 +4356,7 @@ export default function App() {
 
             const guardarDiario = () => {
               if(!formDiario.resumen) return addToast("Escribe el resumen del día.","warning");
-              // PH visitados son opcionales
+
               if(diarioEditId) {
                 // Editar existente
                 setDiarios(p=>p.map(d=>d.id===diarioEditId ? {...d,...formDiario} : d));
