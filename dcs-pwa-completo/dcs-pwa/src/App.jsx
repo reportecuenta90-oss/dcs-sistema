@@ -1566,7 +1566,7 @@ export default function App() {
 
   function navTo(id){setVista(id);setSelOrden(null);setSelReporte(null);setSelInc(null);setPhFiltro("Todos");setEstado("Todos");setTipo("Todos");setTecFiltro("Todos");setFechaDesde("");setFechaHasta("");setFiltrosRep({urgencia:"Todos",fecha:""});}
 
-  const vistaLabel={dashboard:"Dashboard",phs:"Proyectos PH",ordenes:"Órdenes de Trabajo",misOrdenes:"Mis Órdenes",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Mis Reportes" : "Reportes de Conserjes",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",mensajes:"Mensajes",calendario:"Calendario de Órdenes"};
+  const vistaLabel={dashboard:"Dashboard",phs:"Proyectos PH",ordenes:"Órdenes de Trabajo",misOrdenes:"Mis Órdenes",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Mis Reportes" : "Reportes de Conserjes",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes"};
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
 
   // ── LOADING DB ─────────────────────────────────────────────────────────────
@@ -1803,18 +1803,21 @@ export default function App() {
                     marginLeft:sidebarOpen?"0":"auto",flexShrink:0,
                   }}>{unread}</span>
                 )}
-                {/* Badge mensajes no leídos para conserje */}
-                {m.id==="misNotificaciones" && (()=>{
-                  const noLeidos = mensajes.filter(msg=>(msg.para==="todos"||msg.para===usuario?.nombre)&&!msg.leidoPor?.includes(usuario?.nombre)).length;
-                  return noLeidos>0 ? null : null; // ya cubierto arriba con unread
-                })()}
-                {/* Badge mensajes no leídos para ingeniera */}
-                {m.id==="mensajes" && (()=>{
-                  const sinLeer = mensajes.filter(msg=>msg.respuestas?.some(r=>!r.leidoPor?.includes(usuario?.nombre))).length;
-                  return sinLeer>0 ? (
-                    <span style={{background:T.accentBase,color:"#fff",borderRadius:10,fontSize:9,fontWeight:800,padding:"1px 5px",minWidth:16,textAlign:"center",marginLeft:sidebarOpen?"0":"auto",flexShrink:0}}>{sinLeer}</span>
+                {/* Badge emergencias en reportes */}
+                {m.id==="reportesConserje" && (()=>{
+                  const emerg = reportes.filter(r=>r.urgencia==="Emergencia"&&!r.aprobadoPorIng).length;
+                  return emerg>0 ? (
+                    <span style={{background:"#DC2626",color:"#fff",borderRadius:10,fontSize:9,fontWeight:800,padding:"1px 5px",minWidth:16,textAlign:"center",marginLeft:sidebarOpen?"0":"auto",flexShrink:0}}>{emerg}</span>
                   ) : null;
                 })()}
+                {/* Badge pendientes en diarios */}
+                {m.id==="misDiarios" && (()=>{
+                  const pends = diarios.filter(d=>d.pendientes&&d.autor===usuario?.nombre).length;
+                  return pends>0 ? (
+                    <span style={{background:"#D97706",color:"#fff",borderRadius:10,fontSize:9,fontWeight:800,padding:"1px 5px",minWidth:16,textAlign:"center",marginLeft:sidebarOpen?"0":"auto",flexShrink:0}}>{pends}</span>
+                  ) : null;
+                })()}
+
                 {active && sidebarOpen && m.id!=="misNotificaciones" && (
                   <div style={{width:3,height:3,borderRadius:"50%",background:T.sidebarActiveAc,marginLeft:"auto",flexShrink:0}}/>
                 )}
@@ -2062,6 +2065,69 @@ export default function App() {
           {/* ── DASHBOARD ── */}
           {vista==="dashboard" && (
             <div>
+              {/* ── ALERT BANNERS ── */}
+              {(()=>{
+                const emergencias = reportes.filter(r=>r.urgencia==="Emergencia"&&!r.aprobadoPorIng);
+                const pendsDiario = diarios.filter(d=>d.pendientes&&d.autor===usuario?.nombre);
+                const ordenesUrg  = ordenes.filter(o=>o.estado==="Pendiente");
+                return (
+                  <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:emergencias.length||pendsDiario.length||ordenesUrg.length?16:0}}>
+                    {emergencias.length>0 && (
+                      <div onClick={()=>setVista("reportesConserje")} style={{
+                        background:"#FEE2E2",borderLeft:"4px solid #DC2626",
+                        borderRadius:8,padding:"12px 16px",
+                        display:"flex",alignItems:"center",gap:12,cursor:"pointer",
+                        border:"1px solid #FECACA",borderLeft:"4px solid #DC2626",
+                      }}>
+                        <span style={{fontSize:22}}>🚨</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13,fontWeight:700,color:"#991B1B"}}>
+                            {emergencias.length} Emergencia{emergencias.length>1?"s":""} activa{emergencias.length>1?"s":""}
+                          </div>
+                          <div style={{fontSize:11,color:"#B91C1C",marginTop:2}}>
+                            {emergencias[0].ph} · {emergencias[0].conserje}
+                          </div>
+                        </div>
+                        <span style={{background:"#DC2626",color:"#fff",borderRadius:6,padding:"5px 12px",fontSize:11,fontWeight:700}}>Ver →</span>
+                      </div>
+                    )}
+                    {ordenesUrg.length>0 && (
+                      <div onClick={()=>setVista("ordenes")} style={{
+                        background:"#FEF3C7",borderLeft:"4px solid #D97706",
+                        borderRadius:8,padding:"12px 16px",
+                        display:"flex",alignItems:"center",gap:12,cursor:"pointer",
+                        border:"1px solid #FDE68A",borderLeft:"4px solid #D97706",
+                      }}>
+                        <span style={{fontSize:22}}>⏳</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13,fontWeight:700,color:"#92400E"}}>
+                            {ordenesUrg.length} Orden{ordenesUrg.length>1?"es":""} pendiente{ordenesUrg.length>1?"s":""}
+                          </div>
+                          <div style={{fontSize:11,color:"#B45309",marginTop:2}}>Sin atender · requieren asignación</div>
+                        </div>
+                        <span style={{background:"#D97706",color:"#fff",borderRadius:6,padding:"5px 12px",fontSize:11,fontWeight:700}}>Ver →</span>
+                      </div>
+                    )}
+                    {pendsDiario.length>0 && (
+                      <div onClick={()=>setVista("misDiarios")} style={{
+                        background:"#EFF6FF",borderLeft:"4px solid #2563EB",
+                        borderRadius:8,padding:"12px 16px",
+                        display:"flex",alignItems:"center",gap:12,cursor:"pointer",
+                        border:"1px solid #BFDBFE",borderLeft:"4px solid #2563EB",
+                      }}>
+                        <span style={{fontSize:22}}>📌</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13,fontWeight:700,color:"#1E40AF"}}>
+                            {pendsDiario.length} Pendiente{pendsDiario.length>1?"s":""} del diario
+                          </div>
+                          <div style={{fontSize:11,color:"#1D4ED8",marginTop:2}}>Tareas anotadas por revisar</div>
+                        </div>
+                        <span style={{background:"#2563EB",color:"#fff",borderRadius:6,padding:"5px 12px",fontSize:11,fontWeight:700}}>Ver →</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               {/* KPI row */}
               <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:isMobile?8:14,marginBottom:20}}>
                 {[
@@ -5074,182 +5140,7 @@ export default function App() {
           })()}
 
           {/* ── MENSAJES — ingeniera ── */}
-          {vista==="mensajes" && usuario?.rol==="ingeniera" && (()=>{
-            const conserjeLista = conserjes; // usa el estado dinámico, no USUARIOS fijo
 
-            const enviarMensaje = () => {
-              if(!textoNuevo.trim()) return addToast("Escribe un mensaje","warning");
-              if(!selChat) return addToast("Selecciona un destinatario","warning");
-              const nuevo = {
-                id:crypto.randomUUID(),
-                de:usuario.nombre,
-                para:selChat,
-                tipo:selChat==="todos"?"comunicado":"directo",
-                texto:textoNuevo.trim(),
-                fecha:new Date().toISOString().split("T")[0],
-                hora:new Date().toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
-                leidoPor:[usuario.nombre],
-                respuestas:[],
-              };
-              setMensajes(p=>[nuevo,...p]);
-              setTextoNuevo("");
-              if(dbOnline) {
-                supa.post("mensajes",{
-                  de:nuevo.de, para:nuevo.para, texto:nuevo.texto,
-                  leido_por:[], respuestas:[]
-                }).catch(()=>{});
-              }
-              if(selChat==="todos"){
-                pushNotif(`📢 Comunicado de Ing. Mitche: ${nuevo.texto.slice(0,60)}...`,"📢");
-                addToast("Comunicado enviado a todos los conserjes");
-              } else {
-                pushNotif(`💬 Mensaje de Ing. Mitche para ${selChat}`,"💬");
-                addToast(`Mensaje enviado a ${selChat}`);
-              }
-            };
-
-            return (
-              <div style={{maxWidth:680,display:"flex",flexDirection:"column",gap:14}}>
-
-                {/* Header */}
-                <div style={{...s.card,background:`linear-gradient(135deg,${T.accentBase}10,${T.surfacePrimary})`,border:`1px solid ${T.accentBorder}`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <span style={{fontSize:26}}>💬</span>
-                    <div>
-                      <div style={{fontSize:14,fontWeight:700,color:T.textPrimary}}>Mensajes a Conserjes</div>
-                      <div style={{fontSize:11,color:T.textTertiary,marginTop:1}}>{mensajes.length} mensaje{mensajes.length!==1?"s":""} enviado{mensajes.length!==1?"s":""}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Composición */}
-                <div style={s.card}>
-                  <div style={{...s.secTitle,marginBottom:14}}>✉️ Nuevo mensaje</div>
-
-                  {/* Destinatario */}
-                  <div style={{marginBottom:14}}>
-                    <label style={s.label}>Destinatario</label>
-                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                      {[{key:"todos",label:"📢 Todos"},...conserjeLista.map(c=>({key:c.nombre,label:`👤 ${c.nombre}`}))].map(op=>(
-                        <button key={op.key} onClick={()=>setSelChat(op.key)} style={{
-                          padding:"8px 14px",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:600,
-                          fontFamily:"'IBM Plex Sans',sans-serif",transition:"all .15s",
-                          border:`1.5px solid ${selChat===op.key?T.accentBase:T.borderDefault}`,
-                          background:selChat===op.key?T.accentMuted:T.surfaceSecond,
-                          color:selChat===op.key?T.accentText:T.textTertiary,
-                        }}>{op.label}</button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Texto */}
-                  <div style={{marginBottom:12}}>
-                    <label style={s.label}>Mensaje</label>
-                    <textarea
-                      value={textoNuevo}
-                      onChange={e=>setTextoNuevo(e.target.value)}
-                      rows={3}
-                      placeholder={!selChat?"Primero selecciona un destinatario...":selChat==="todos"?"Escribe un comunicado para todos los conserjes...":"Escribe un mensaje directo..."}
-                      disabled={!selChat}
-                      style={{...s.textarea,opacity:selChat?1:.5}}
-                    />
-                  </div>
-
-                  <button onClick={enviarMensaje} style={{
-                    ...s.btnPrimary,padding:"10px 20px",fontSize:13,
-                    opacity:(!selChat||!textoNuevo.trim())?.6:1,
-                    background:selChat==="todos"?"#7C3AED":T.accentBase,
-                  }}>
-                    {selChat==="todos"?"📢 Enviar comunicado a todos":selChat?`💬 Enviar a ${selChat}`:"💬 Enviar mensaje"}
-                  </button>
-                </div>
-
-                {/* Historial */}
-                {mensajes.length===0 ? (
-                  <div style={{...s.card,textAlign:"center",padding:"44px 24px"}}>
-                    <div style={{fontSize:34,marginBottom:10}}>💬</div>
-                    <div style={{fontSize:13,color:T.textTertiary}}>No has enviado mensajes aún.</div>
-                    <div style={{fontSize:11,color:T.textTertiary,marginTop:4}}>Selecciona un destinatario arriba para empezar.</div>
-                  </div>
-                ) : (
-                  <div style={s.card}>
-                    <div style={{...s.secTitle,marginBottom:14}}>📋 Historial</div>
-                    <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                      {mensajes.map(msg=>{
-                        const esCom = msg.tipo==="comunicado";
-                        const color = esCom?"#7C3AED":T.accentBase;
-                        return (
-                          <div key={msg.id} style={{borderRadius:6,border:`1px solid ${color}22`,borderLeft:`4px solid ${color}`,overflow:"hidden"}}>
-                            <div style={{padding:"10px 14px",background:esCom?"#F5F3FF":T.surfaceSecond,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8}}>
-                              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                                <span style={{fontSize:14}}>{esCom?"📢":"💬"}</span>
-                                <span style={{fontSize:12,fontWeight:700,color}}>{esCom?"Comunicado — todos los conserjes":msg.para}</span>
-                                <span style={{fontSize:10,color:T.textTertiary,fontFamily:"'IBM Plex Mono',monospace"}}>{msg.fecha} {msg.hora}</span>
-                              </div>
-                              {(msg.respuestas||[]).length>0 && (
-                                <span style={{fontSize:10,background:T.successMuted,color:T.successText,padding:"2px 8px",borderRadius:4,fontWeight:600}}>
-                                  💬 {msg.respuestas.length} respuesta{msg.respuestas.length!==1?"s":""}
-                                </span>
-                              )}
-                            </div>
-                            <div style={{padding:"10px 14px",fontSize:13,color:T.textPrimary,lineHeight:1.7}}>{msg.texto}</div>
-                            {(msg.respuestas||[]).length>0 && (
-                              <div style={{borderTop:`1px solid ${T.borderDefault}`,padding:"10px 14px",display:"flex",flexDirection:"column",gap:8}}>
-                                {msg.respuestas.map((r,i)=>(
-                                  <div key={i} style={{background:T.surfaceSecond,borderRadius:6,padding:"8px 12px",borderLeft:`3px solid ${T.successBase}`}}>
-                                    <div style={{fontSize:10,fontWeight:700,color:T.successText,marginBottom:3}}>{r.de} · {r.hora}</div>
-                                    <div style={{fontSize:12,color:T.textPrimary,lineHeight:1.6}}>{r.texto}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            {/* Responder desde la ingeniera */}
-                            <div style={{borderTop:`1px solid ${T.borderDefault}`,padding:"10px 14px"}}>
-                              {respAbiertas["ing_"+msg.id] ? (
-                                <div style={{display:"flex",gap:8}}>
-                                  <textarea
-                                    value={textosResp["ing_"+msg.id]||""}
-                                    onChange={e=>setTextosResp(p=>({...p,["ing_"+msg.id]:e.target.value}))}
-                                    rows={2}
-                                    placeholder="Escribe tu seguimiento..."
-                                    style={{...s.textarea,flex:1,fontSize:12}}
-                                  />
-                                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                                    <button onClick={()=>{
-                                      const texto = textosResp["ing_"+msg.id]||"";
-                                      if(!texto.trim()) return;
-                                      setMensajes(p=>p.map(m=>m.id===msg.id?{...m,respuestas:[...(m.respuestas||[]),{
-                                        de:usuario.nombre, texto:texto.trim(),
-                                        hora:new Date().toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
-                                        fecha:new Date().toISOString().split("T")[0],
-                                        leidoPor:[usuario.nombre],
-                                      }]}:m));
-                                      setTextosResp(p=>({...p,["ing_"+msg.id]:""}));
-                                      setRespAbiertas(p=>({...p,["ing_"+msg.id]:false}));
-                                      pushNotif("💬 Ing. Mitche respondió tu mensaje","💬");
-                                      addToast("Respuesta enviada ✓");
-                                    }} style={{...s.btnPrimary,padding:"8px 14px",fontSize:12}}>Enviar</button>
-                                    <button onClick={()=>setRespAbiertas(p=>({...p,["ing_"+msg.id]:false}))} style={{...s.btnSecondary,padding:"6px 14px",fontSize:11}}>Cancelar</button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <button onClick={()=>setRespAbiertas(p=>({...p,["ing_"+msg.id]:true}))} style={{...s.btnSecondary,padding:"6px 12px",fontSize:11,color:T.accentText,borderColor:T.accentBorder}}>
-                                  💬 Responder
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
-
-          {/* ── CALENDARIO DE ÓRDENES ── */}
           {vista==="calendario" && (usuario?.rol==="admin"||usuario?.rol==="ingeniera") && (()=>{
 
             const MESES_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -5708,5 +5599,3 @@ export default function App() {
     </div>
   );
 }
-
-            
