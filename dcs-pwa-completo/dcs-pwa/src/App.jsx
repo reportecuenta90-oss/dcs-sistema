@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+
+        import { useState, useEffect, useRef, useMemo } from "react";
 
 // ── Supabase cliente ──────────────────────────────────────────────────────────
 const SUPA_URL = "https://irldxqsbfczabbvdjnkg.supabase.co";
@@ -370,7 +371,7 @@ export default function App() {
 
   // ── Estado de conexión ────────────────────────────────────────────────────
   const [dbOnline, setDbOnline] = useState(false);
-  const [dbLoading, setDbLoading] = useState(true);
+  const [dbLoading, setDbLoading] = useState(false);
 
   const [dark, setDark] = useState(() => lsGet("dcs_dark", true));
   const T = dark ? DARK : LIGHT;
@@ -559,7 +560,6 @@ export default function App() {
   useEffect(()=>{
     lsSet("dcs_dark", dark);
     async function cargarDatos() {
-      setDbLoading(true);
       try {
         const [_ord, _rep, _repI, _inc, _msg, _dia, _cons] = await Promise.all([
           supa.get("ordenes","order=id.desc"),
@@ -585,9 +585,6 @@ export default function App() {
       setDbLoading(false);
     }
     cargarDatos();
-    // Polling cada 15s para sincronizar
-    const iv = setInterval(cargarDatos, 15000);
-    return () => clearInterval(iv);
   },[]);
 
   // ── Mappers DB → App ──────────────────────────────────────────────────────
@@ -1564,17 +1561,7 @@ export default function App() {
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
 
   // ── LOADING DB ─────────────────────────────────────────────────────────────
-  if(dbLoading) return (
-    <div style={{position:"fixed",inset:0,background:"#050810",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:9999}}>
-      <div style={{fontSize:52,marginBottom:16}}>⚡</div>
-      <div style={{fontSize:20,fontWeight:800,color:"#fff",marginBottom:6,fontFamily:"'IBM Plex Sans',sans-serif"}}>DC&S Sistema</div>
-      <div style={{fontSize:12,color:"#4A6080",marginBottom:28,fontFamily:"'IBM Plex Mono',monospace"}}>Conectando con la base de datos...</div>
-      <div style={{width:220,height:3,background:"#0A1220",borderRadius:2,overflow:"hidden"}}>
-        <div style={{height:"100%",width:"60%",background:"linear-gradient(90deg,#2563EB,#60A5FA)",borderRadius:2,animation:"ldbar 1.4s ease-in-out infinite"}}/>
-      </div>
-      <style>{`@keyframes ldbar{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}`}</style>
-    </div>
-  );
+
 
   // ── LOGIN ──────────────────────────────────────────────────────────────────
   if(!usuario) return (
