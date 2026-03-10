@@ -370,7 +370,7 @@ export default function App() {
 
   // ── Estado de conexión ────────────────────────────────────────────────────
   const [dbOnline, setDbOnline] = useState(false);
-  const [dbLoading, setDbLoading] = useState(false);
+  const [dbLoading, setDbLoading] = useState(true);
 
   const [dark, setDark] = useState(() => lsGet("dcs_dark", true));
   const T = dark ? DARK : LIGHT;
@@ -391,6 +391,13 @@ export default function App() {
   const [fechaDesde,setFechaDesde] = useState("");
   const [fechaHasta,setFechaHasta] = useState("");
   const [sidebarOpen,setSidebar]   = useState(true);
+  const [isMobile, setIsMobile] = useState(() => typeof window!=="undefined" && window.innerWidth < 768);
+  useEffect(()=>{
+    const check = ()=>{ setIsMobile(window.innerWidth<768); };
+    window.addEventListener("resize",check);
+    if(window.innerWidth<768) setSidebar(false);
+    return ()=>window.removeEventListener("resize",check);
+  },[]);
   const [loginForm,setLoginForm]   = useState({correo:"",pass:""});
   const [loginError,setLoginError] = useState("");
   const [formOrden,setFormOrden]   = useState({tipo:TIPOS[0],ph:PHS[0],ubicacion:"",fecha:"",notas:"",asignadoA:""});
@@ -551,9 +558,8 @@ export default function App() {
   // ── Carga inicial desde Supabase ─────────────────────────────────────────
   useEffect(()=>{
     lsSet("dcs_dark", dark);
-    let primeraVez = true;
     async function cargarDatos() {
-      if(primeraVez) setDbLoading(true);
+      setDbLoading(true);
       try {
         const [_ord, _rep, _repI, _inc, _msg, _dia, _cons] = await Promise.all([
           supa.get("ordenes","order=id.desc"),
@@ -577,7 +583,6 @@ export default function App() {
         setDbOnline(false);
       }
       setDbLoading(false);
-      primeraVez = false;
     }
     cargarDatos();
     // Polling cada 15s para sincronizar
@@ -1558,6 +1563,19 @@ export default function App() {
   const vistaLabel={dashboard:"Dashboard",phs:"Proyectos PH",ordenes:"Órdenes de Trabajo",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Mis Reportes" : "Reportes de Conserjes",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",mensajes:"Mensajes",calendario:"Calendario de Órdenes"};
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
 
+  // ── LOADING DB ─────────────────────────────────────────────────────────────
+  if(dbLoading) return (
+    <div style={{position:"fixed",inset:0,background:"#050810",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",zIndex:9999}}>
+      <div style={{fontSize:52,marginBottom:16}}>⚡</div>
+      <div style={{fontSize:20,fontWeight:800,color:"#fff",marginBottom:6,fontFamily:"'IBM Plex Sans',sans-serif"}}>DC&S Sistema</div>
+      <div style={{fontSize:12,color:"#4A6080",marginBottom:28,fontFamily:"'IBM Plex Mono',monospace"}}>Conectando con la base de datos...</div>
+      <div style={{width:220,height:3,background:"#0A1220",borderRadius:2,overflow:"hidden"}}>
+        <div style={{height:"100%",width:"60%",background:"linear-gradient(90deg,#2563EB,#60A5FA)",borderRadius:2,animation:"ldbar 1.4s ease-in-out infinite"}}/>
+      </div>
+      <style>{`@keyframes ldbar{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}`}</style>
+    </div>
+  );
+
   // ── LOGIN ──────────────────────────────────────────────────────────────────
   if(!usuario) return (
     <div style={{
@@ -1599,14 +1617,8 @@ export default function App() {
                 fontSize:11,color:T.textTertiary,
                 marginTop:3,letterSpacing:"0.3px",
               }}>Fundación Buenaventura · DC&amp;S</div>
-              <div style={{display:"flex",alignItems:"center",gap:4,marginTop:4}}>
-                <div style={{width:7,height:7,borderRadius:"50%",flexShrink:0,
-                  background:dbOnline?"#22C55E":"#F59E0B",
-                  boxShadow:dbOnline?"0 0 6px #22C55E80":"0 0 6px #F59E0B80"
-                }}/>
-                <span style={{fontSize:9,fontFamily:"'IBM Plex Mono',monospace",
-                  color:dbOnline?"#22C55E":"#F59E0B",
-                }}>{dbOnline?"Base de datos conectada":"Modo offline"}</span>
+              <div style={{marginTop:4,fontSize:14}}>
+                {dbOnline?"😊":"😢"}
               </div>
             </div>
           </div>
@@ -1670,21 +1682,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Demo accounts */}
-        <div style={{
-          background:T.loginDemoBg,
-          border:`1px solid ${T.loginDemoBdr}`,
-          borderRadius:6, padding:"12px 14px",
-          marginBottom:24, fontSize:12,
-          color:T.textTertiary, lineHeight:1.9,
-          fontFamily:"'IBM Plex Mono', monospace",
-        }}>
-          <div style={{fontFamily:"'IBM Plex Sans', sans-serif",fontSize:10,fontWeight:700,color:T.textSecondary,textTransform:"uppercase",letterSpacing:"0.8px",marginBottom:8}}>
-            Accesos de prueba
-          </div>
-          <div>admin@dcs.com · 1234 &nbsp;&nbsp; mitche@dcs.com · 1234</div>
-          <div>carlos@dcs.com · 1234 &nbsp;&nbsp; pedro@dcs.com · 1234</div>
-        </div>
+
 
         <button onClick={login} style={{
           width:"100%",
@@ -1728,15 +1726,30 @@ export default function App() {
         input:focus,select:focus,textarea:focus{border-color:${T.accentBase} !important;outline:none}
         tr:hover td{background:${T.surfaceHover}}
         button:hover{opacity:0.88}
+        @media(max-width:767px){
+          .kpi-card{padding:10px !important;}
+          .kpi-val{font-size:26px !important;}
+          .topbar-search{display:none !important;}
+          * { word-break:break-word; overflow-wrap:break-word; }
+          table { display:block; overflow-x:auto; }
+        }
       `}</style>
       {/* ── SIDEBAR ── */}
+      {isMobile && sidebarOpen && (
+        <div onClick={()=>setSidebar(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",zIndex:98}}/>
+      )}
       <div style={{
         background:T.sidebarBg,
         display:"flex", flexDirection:"column",
-        width:sidebarOpen?220:56,
+        width: isMobile?(sidebarOpen?220:0):(sidebarOpen?220:56),
+        minWidth: isMobile?(sidebarOpen?220:0):(sidebarOpen?220:56),
         transition:"width .2s ease",
         flexShrink:0, overflow:"hidden",
-        borderRight:`1px solid ${T.sidebarBorder}`,
+        borderRight: (isMobile&&!sidebarOpen)?"none":`1px solid ${T.sidebarBorder}`,
+        position: isMobile?"fixed":"relative",
+        top:0, left:0,
+        height: isMobile?"100vh":"auto",
+        zIndex: isMobile?99:undefined,
       }}>
         {/* Logo */}
         <div style={{
@@ -2042,7 +2055,7 @@ export default function App() {
         </div>
 
         {/* CONTENT */}
-        <div style={{flex:1,overflowY:"auto",padding:24,position:"relative"}}>
+        <div style={{flex:1,overflowY:"auto",padding:isMobile?"12px 10px":24,position:"relative"}}>
           {/* Watermark */}
           <img src={LOGO_B64} alt="" aria-hidden="true" style={{
             position:"fixed",
@@ -2058,7 +2071,7 @@ export default function App() {
           {vista==="dashboard" && (
             <div>
               {/* KPI row */}
-              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:20}}>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:isMobile?8:14,marginBottom:20}}>
                 {[
                   {label:"Proyectos PH",   val:PHS.length,                                         sub:"registrados",       color:T.accentBase,   bg:T.accentMuted,   border:T.accentBorder},
                   {label:"Órdenes Activas",val:ordenes.filter(o=>o.estado!=="Cerrado").length,      sub:"en seguimiento",    color:T.accentBase,   bg:T.accentMuted,   border:T.accentBorder},
@@ -4360,7 +4373,7 @@ export default function App() {
 
             const guardarDiario = () => {
               if(!formDiario.resumen) return addToast("Escribe el resumen del día.","warning");
-              if(formDiario.bloques.length===0) return addToast("Agrega al menos un PH visitado.","warning");
+              // PH visitados son opcionales
               if(diarioEditId) {
                 // Editar existente
                 setDiarios(p=>p.map(d=>d.id===diarioEditId ? {...d,...formDiario} : d));
