@@ -551,8 +551,9 @@ export default function App() {
   // ── Carga inicial desde Supabase ─────────────────────────────────────────
   useEffect(()=>{
     lsSet("dcs_dark", dark);
+    let primeraVez = true;
     async function cargarDatos() {
-      setDbLoading(true);
+      if(primeraVez) setDbLoading(true);
       try {
         const [_ord, _rep, _repI, _inc, _msg, _dia, _cons] = await Promise.all([
           supa.get("ordenes","order=id.desc"),
@@ -576,6 +577,7 @@ export default function App() {
         setDbOnline(false);
       }
       setDbLoading(false);
+      primeraVez = false;
     }
     cargarDatos();
     // Polling cada 15s para sincronizar
