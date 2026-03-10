@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 
 // ── Supabase cliente ──────────────────────────────────────────────────────────
 const SUPA_URL = "https://irldxqsbfczabbvdjnkg.supabase.co";
-const SUPA_KEY = "";eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlybGR4cXNiZmN6YWJidmRqbmtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzk0NTgsImV4cCI6MjA4ODY1NTQ1OH0.OHghV0zicn6wIsOqcBuw3qu6pBTkBy5o50mXkSHTmb0
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlybGR4cXNiZmN6YWJidmRqbmtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzk0NTgsImV4cCI6MjA4ODY1NTQ1OH0.OHghV0zicn6wIsOqcBuw3qu6pBTkBy5o50mXkSHTmb0";
 
 const supa = {
   _h: { "Content-Type": "application/json", "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY },
