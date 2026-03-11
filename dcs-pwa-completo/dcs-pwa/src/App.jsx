@@ -5385,7 +5385,7 @@ export default function App() {
             const pendientes       = ordenesDelMes.filter(o => o.estado==="Pendiente");
             const reportesDelMes   = reportes.filter(r => enMes(r.created_at||r.fecha));
             const incidenciasDelMes= incidencias.filter(i => enMes(i.created_at||i.fecha));
-            const reportesIngDelMes= reportesIng.filter(r => enMes(r.created_at||r.fecha));
+            const reportesIngDelMes= repIng.filter(r => enMes(r.created_at||r.fecha));
 
             // Agrupar órdenes por PH
             const porPH = {};
