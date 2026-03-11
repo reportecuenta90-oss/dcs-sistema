@@ -446,6 +446,8 @@ export default function App() {
   const [diarPHF,setDiarPHF] = useState("Todos");
   const [diarioPreview,setDiarioPreview] = useState(null); // diario en vista previa
   const [showDiarioPreview,setShowDiarioPreview] = useState(false);
+  const [showIdleWarning,setShowIdleWarning]   = useState(false);
+  const [matForm,setMatForm] = useState({material:"",cantidad:"",unidad:"",area:"",obs:""});
   const [diarioEditId,setDiarioEditId]   = useState(null); // id del diario en edición
   const [formDiario,setFormDiario] = useState({
     fecha: new Date().toISOString().split("T")[0],
@@ -660,6 +662,29 @@ export default function App() {
     document.addEventListener("mousedown",h);
     return()=>document.removeEventListener("mousedown",h);
   },[]);
+
+  // ── Auto-logout por inactividad (15 min) ─────────────────────
+  useEffect(()=>{
+    if(!usuario) return;
+    const TIMEOUT = 15 * 60 * 1000; // 15 minutos
+    let timer;
+    let warnTimer;
+    const reset = () => {
+      clearTimeout(timer);
+      clearTimeout(warnTimer);
+      setShowIdleWarning(false);
+      warnTimer = setTimeout(()=>setShowIdleWarning(true), TIMEOUT - 60000); // aviso 1 min antes
+      timer = setTimeout(()=>{ logout(); addToast("Sesión cerrada por inactividad","warning"); }, TIMEOUT);
+    };
+    const events = ["mousemove","mousedown","keydown","touchstart","scroll"];
+    events.forEach(e=>document.addEventListener(e, reset));
+    reset();
+    return()=>{
+      clearTimeout(timer);
+      clearTimeout(warnTimer);
+      events.forEach(e=>document.removeEventListener(e, reset));
+    };
+  },[usuario]);
 
   // ── Lógica ─────────────────────────────────────────────────────────────────
   function addToast(msg,type="success"){
@@ -2161,10 +2186,10 @@ export default function App() {
               </div>
 
               {/* Chart + Estado */}
-              <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:14,marginBottom:20}}>
+              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"2fr 1fr",gap:14,marginBottom:20}}>
                 <div style={s.card}>
                   <div style={{fontSize:12,fontWeight:600,color:T.textPrimary,marginBottom:20}}>Órdenes por mes</div>
-                  <ResponsiveContainer width="100%" height={160}>
+                  <ResponsiveContainer width="100%" height={isMobile?200:160}>
                     <LineChart data={grafData}>
                       <CartesianGrid strokeDasharray="3 3" stroke={T.chartGrid}/>
                       <XAxis dataKey="mes" tick={{fontSize:10,fill:T.textTertiary}} axisLine={false} tickLine={false}/>
@@ -2931,53 +2956,81 @@ export default function App() {
                 />
               </div>
 
-              {/* Materiales / Electrodos instalados */}
-              <div style={s.card}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+              {/* Materiales instalados — nuevo diseño */}
+              {(()=>{
+                return (
+                <div style={s.card}>
                   <div style={s.secTitle}>🔧 Materiales instalados</div>
-                  <button onClick={()=>{
-                    const nuevo={material:"",diametro:"",longitud:"",tipoInst:"Vertical",calibre:"",hebras:"",diametroCable:"",tipo:""};
-                    actualizarOrden(selOrden.id,{materiales:[...(selOrden.materiales||[]),nuevo]});
-                  }} style={{...s.btnSecondary,padding:"4px 10px",fontSize:11}}>+ Agregar fila</button>
+                  {/* Formulario */}
+                  <div style={{background:T.accentMuted,border:`1.5px dashed ${T.accentBorder}`,borderRadius:10,padding:12,marginBottom:14}}>
+                    <div style={{marginBottom:8}}>
+                      <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Material</div>
+                      <input
+                        value={matForm.material}
+                        onChange={e=>setMatForm(p=>({...p,material:e.target.value}))}
+                        placeholder="Ej: Pintura, Tubo PVC, Cable..."
+                        style={{...s.input,width:"100%"}}
+                      />
+                    </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                      <div>
+                        <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Cantidad</div>
+                        <input type="number" value={matForm.cantidad} onChange={e=>setMatForm(p=>({...p,cantidad:e.target.value}))} placeholder="0" style={{...s.input,width:"100%"}}/>
+                      </div>
+                      <div>
+                        <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Unidad</div>
+                        <select value={matForm.unidad} onChange={e=>setMatForm(p=>({...p,unidad:e.target.value}))} style={{...s.select,width:"100%"}}>
+                          <option value="">— Unidad —</option>
+                          {["m","pcs","kg","litros","rollo","caja","galón","par","unidad"].map(u=><option key={u}>{u}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{marginBottom:8}}>
+                      <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Área de uso</div>
+                      <input value={matForm.area} onChange={e=>setMatForm(p=>({...p,area:e.target.value}))} placeholder="Ej: Lobby, Piscina, Apt. 3B..." style={{...s.input,width:"100%"}}/>
+                    </div>
+                    <div style={{marginBottom:10}}>
+                      <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Observación <span style={{fontWeight:400,opacity:0.6}}>(opcional)</span></div>
+                      <input value={matForm.obs} onChange={e=>setMatForm(p=>({...p,obs:e.target.value}))} placeholder="Detalle adicional..." style={{...s.input,width:"100%"}}/>
+                    </div>
+                    <button
+                      onClick={()=>{
+                        if(!matForm.material.trim()) return addToast("Escribe el nombre del material","warning");
+                        const nuevo={material:matForm.material,cantidad:matForm.cantidad||"—",unidad:matForm.unidad||"pcs",area:matForm.area,obs:matForm.obs};
+                        actualizarOrden(selOrden.id,{materiales:[...(selOrden.materiales||[]),nuevo]});
+                      }}
+                      style={{...s.btnPrimary,width:"100%",justifyContent:"center",display:"flex",alignItems:"center",gap:6}}
+                    >+ Agregar material</button>
+                  </div>
+                  {/* Lista */}
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                    <span style={{fontSize:12,fontWeight:600,color:T.textPrimary}}>Materiales agregados</span>
+                    <span style={{background:T.accentMuted,border:`1px solid ${T.accentBorder}`,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:700,color:T.accentText}}>{(selOrden.materiales||[]).length} items</span>
+                  </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    {(selOrden.materiales||[]).length===0 && (
+                      <div style={{textAlign:"center",padding:20,color:T.textTertiary,fontSize:12,background:T.surfaceSecond,borderRadius:8,border:`1.5px dashed ${T.borderDefault}`}}>
+                        📦 Aún no hay materiales agregados
+                      </div>
+                    )}
+                    {(selOrden.materiales||[]).map((m,i)=>(
+                      <div key={i} style={{background:T.surfaceSecond,border:`1.5px solid ${T.accentBorder}`,borderRadius:10,padding:"11px 12px",display:"flex",alignItems:"center",gap:10}}>
+                        <div style={{width:28,height:28,background:T.accentBase,color:"#fff",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0}}>{i+1}</div>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:13,fontWeight:700,color:T.accentText,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.material}</div>
+                          <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{m.cantidad} {m.unidad}{m.area?` · 📍 ${m.area}`:""}</div>
+                          {m.obs&&<div style={{fontSize:10,color:T.textTertiary,marginTop:1,fontStyle:"italic",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>💬 {m.obs}</div>}
+                        </div>
+                        <button onClick={()=>{
+                          const mats=(selOrden.materiales||[]).filter((_,j)=>j!==i);
+                          actualizarOrden(selOrden.id,{materiales:mats});
+                        }} style={{background:T.dangerMuted,border:`1px solid ${T.dangerBase}33`,color:T.dangerText,borderRadius:6,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,cursor:"pointer",flexShrink:0}}>✕</button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{overflowX:"auto"}}>
-                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
-                    <thead>
-                      <tr>{["Material","Ø (mm)","L (M)","Tipo Inst.","Calibre","# Hebras","Ø cable","Tipo",""].map(h=>
-                        <th key={h} style={{...s.th,padding:"6px 8px",fontSize:10}}>{h}</th>
-                      )}</tr>
-                    </thead>
-                    <tbody>
-                      {(selOrden.materiales||[]).length===0 && (
-                        <tr><td colSpan={9} style={{padding:16,textAlign:"center",color:T.textTertiary,fontSize:11}}>Sin materiales. Usa "+ Agregar fila".</td></tr>
-                      )}
-                      {(selOrden.materiales||[]).map((m,i)=>(
-                        <tr key={i}>
-                          {["material","diametro","longitud","tipoInst","calibre","hebras","diametroCable","tipo"].map(k=>(
-                            <td key={k} style={{...s.td,padding:"4px 6px"}}>
-                              <input
-                                defaultValue={m[k]||""}
-                                onBlur={e=>{
-                                  const mats=[...(selOrden.materiales||[])];
-                                  mats[i]={...mats[i],[k]:e.target.value};
-                                  actualizarOrden(selOrden.id,{materiales:mats});
-                                }}
-                                style={{...s.input,padding:"4px 6px",fontSize:11,minWidth:60}}
-                              />
-                            </td>
-                          ))}
-                          <td style={{...s.td,padding:"4px 6px"}}>
-                            <button onClick={()=>{
-                              const mats=(selOrden.materiales||[]).filter((_,j)=>j!==i);
-                              actualizarOrden(selOrden.id,{materiales:mats});
-                            }} style={{background:"none",border:"none",cursor:"pointer",color:T.dangerText,fontSize:14}}>×</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* Insumos instalados por área */}
               <div style={s.card}>
@@ -4546,6 +4599,29 @@ export default function App() {
                 const nuevo = {...formDiario, id:crypto.randomUUID(), autor:usuario.nombre,
                   creadoEn: new Date().toLocaleString("es",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})};
                 setDiarios(p=>[nuevo,...p]);
+      // Si tiene pendientes, agregar como evento en el calendario del día siguiente
+      if(nuevo.pendientes){
+        const fechaBase = new Date(nuevo.fecha+"T00:00:00");
+        fechaBase.setDate(fechaBase.getDate()+1);
+        const fechaSig = fechaBase.toISOString().split("T")[0];
+        const evtId = "pend_"+crypto.randomUUID();
+        setOrdenes(p=>[...p,{
+          id:evtId,
+          tipo:"📌 Pendiente de Diario",
+          ph:nuevo.bloques[0]?.ph||"—",
+          ubicacion:nuevo.pendientes.slice(0,80),
+          fecha:fechaSig,
+          estado:"Pendiente",
+          asignadoA:null,
+          aprobado:false,
+          notas:nuevo.pendientes,
+          descripcionTrabajo:"",conclusiones:"",
+          mediciones:[],materiales:[],insumos:[],checklist:[],
+          historial:[{fecha:new Date().toLocaleString("es"),usuario:nuevo.autor,accion:"Creado desde pendientes del diario"}],
+          esPendienteDiario:true,
+        }]);
+        addToast("📌 Pendiente agregado al calendario","success");
+      }
                 addToast("Diario guardado ✓");
                 if(dbOnline) {
                   supa.post("diarios",{
@@ -5590,6 +5666,25 @@ export default function App() {
         </div>
       )}
       </div>{/* end MAIN */}
+
+      {/* ── Idle Warning Modal ── */}
+      {showIdleWarning && usuario && (
+        <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:"#fff",borderRadius:16,padding:28,maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+            <div style={{fontSize:40,marginBottom:12}}>⏰</div>
+            <div style={{fontSize:16,fontWeight:700,color:"#111827",marginBottom:8}}>¿Sigues ahí?</div>
+            <div style={{fontSize:13,color:"#6B7280",marginBottom:20,lineHeight:1.5}}>
+              Tu sesión se cerrará en <b style={{color:"#DC2626"}}>1 minuto</b> por inactividad.
+            </div>
+            <button
+              onClick={()=>setShowIdleWarning(false)}
+              style={{background:"#2563EB",color:"#fff",border:"none",borderRadius:10,padding:"11px 28px",fontSize:14,fontWeight:700,cursor:"pointer",width:"100%"}}
+            >
+              Seguir conectado
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── TOASTS ── */}
       <div style={{position:"fixed",bottom:20,right:20,display:"flex",flexDirection:"column",gap:8,zIndex:400}}>
