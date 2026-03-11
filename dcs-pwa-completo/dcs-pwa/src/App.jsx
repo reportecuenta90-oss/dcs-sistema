@@ -115,9 +115,9 @@ const initRepIng = [
 ];
 
 const MENU = {
-  admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"Proyectos PH"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"nueva",icon:"+",label:"Nueva Orden"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"misDiarios",icon:"📚",label:"Diarios de Campo"}],
+  admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"Proyectos PH"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"nueva",icon:"+",label:"Nueva Orden"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"misDiarios",icon:"📚",label:"Diarios de Campo"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"}],
   tecnico:  [{id:"misOrdenes",icon:"≡",label:"Mis Órdenes"},{id:"reportesIng",icon:"◈",label:"Reportes Ing."},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
-  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"reporteIngeniera",icon:"◈",label:"Mis Reportes"},{id:"nuevoReporteIngeniera",icon:"+",label:"Nuevo Reporte"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"}],
+  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"reporteIngeniera",icon:"◈",label:"Mis Reportes"},{id:"nuevoReporteIngeniera",icon:"+",label:"Nuevo Reporte"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"}],
   conserje: [{id:"nuevoReporte",icon:"+",label:"Nuevo Reporte"},{id:"reportesConserje",icon:"≡",label:"Mis Reportes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"misNotificaciones",icon:"🔔",label:"Notificaciones"}],
 };
 
@@ -1593,7 +1593,7 @@ export default function App() {
 
   function navTo(id){setVista(id);setSelOrden(null);setSelReporte(null);setSelInc(null);setPhFiltro("Todos");setEstado("Todos");setTipo("Todos");setTecFiltro("Todos");setFechaDesde("");setFechaHasta("");setFiltrosRep({urgencia:"Todos",fecha:""});}
 
-  const vistaLabel={dashboard:"Dashboard",phs:"Proyectos PH",ordenes:"Órdenes de Trabajo",misOrdenes:"Mis Órdenes",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Mis Reportes" : "Reportes de Conserjes",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes"};
+  const vistaLabel={dashboard:"Dashboard",phs:"Proyectos PH",ordenes:"Órdenes de Trabajo",misOrdenes:"Mis Órdenes",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Mis Reportes" : "Reportes de Conserjes",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual"};
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
 
   // ── LOADING DB ─────────────────────────────────────────────────────────────
@@ -5289,6 +5289,312 @@ export default function App() {
                   );
                 })}
 
+              </div>
+            );
+          })()}
+
+          {/* ── REPORTE MENSUAL ── */}
+          {vista==="reporteMensual" && (usuario?.rol==="admin"||usuario?.rol==="ingeniera") && (()=>{
+            const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+            const hoy = new Date();
+            const [mesRM, setMesRM] = React.useState(hoy.getMonth());
+            const [anioRM, setAnioRM] = React.useState(hoy.getFullYear());
+            const [notaRM, setNotaRM] = React.useState("");
+            const [generando, setGenerando] = React.useState(false);
+
+            // Filtrar datos del mes seleccionado
+            const inicio = new Date(anioRM, mesRM, 1);
+            const fin    = new Date(anioRM, mesRM+1, 0);
+            const enMes  = (fecha) => { if(!fecha) return false; const d=new Date(fecha); return d>=inicio && d<=fin; };
+
+            const ordenesDelMes    = ordenes.filter(o => enMes(o.fecha_creacion||o.created_at));
+            const resueltas        = ordenesDelMes.filter(o => o.estado==="Resuelto"||o.estado==="Cerrado");
+            const enProceso        = ordenesDelMes.filter(o => o.estado==="En proceso");
+            const pendientes       = ordenesDelMes.filter(o => o.estado==="Pendiente");
+            const reportesDelMes   = reportes.filter(r => enMes(r.created_at||r.fecha));
+            const incidenciasDelMes= incidencias.filter(i => enMes(i.created_at||i.fecha));
+            const reportesIngDelMes= reportesIng.filter(r => enMes(r.created_at||r.fecha));
+
+            // Agrupar órdenes por PH
+            const porPH = {};
+            ordenesDelMes.forEach(o=>{
+              const ph = o.ph||"Sin PH";
+              if(!porPH[ph]) porPH[ph]={total:0,resueltas:0,tipos:{}};
+              porPH[ph].total++;
+              if(o.estado==="Resuelto"||o.estado==="Cerrado") porPH[ph].resueltas++;
+              const tipo = o.tipo||"General";
+              porPH[ph].tipos[tipo] = (porPH[ph].tipos[tipo]||0)+1;
+            });
+
+            // Materiales usados (de reportes de ingeniera)
+            const materialesUsados = [];
+            reportesIngDelMes.forEach(r=>{
+              (r.materiales||[]).forEach(m=>{
+                if(m.material) materialesUsados.push({...m, ph: r.ph||"", orden: r.orden_id||""});
+              });
+            });
+
+            const generarPDF = () => {
+              setGenerando(true);
+              setTimeout(()=>{
+                const ahora = new Date();
+                const fechaGen = ahora.toLocaleDateString("es",{year:"numeric",month:"long",day:"numeric"});
+                const horaGen  = ahora.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"});
+
+                const rowsOrdenesPorPH = Object.entries(porPH).sort((a,b)=>b[1].total-a[1].total).map(([ph,d])=>`
+                  <tr>
+                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:600;color:#0f172a">${ph}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;font-weight:700;color:#2563eb">${d.total}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#16a34a;font-weight:600">${d.resueltas}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#d97706;font-weight:600">${d.total-d.resueltas}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${Object.entries(d.tipos).map(([t,n])=>`${t} (${n})`).join(", ")}</td>
+                  </tr>`).join("");
+
+                const rowsOrdenes = ordenesDelMes.slice(0,50).map(o=>`
+                  <tr>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;font-family:monospace;color:#64748b">#${o.id?.toString().slice(-4)||"—"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;font-weight:600">${o.ph||"—"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px">${o.tipo||"General"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px">${(o.descripcion||"").slice(0,50)}${(o.descripcion||"").length>50?"…":""}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:10px">
+                      <span style="padding:2px 8px;border-radius:10px;font-weight:700;background:${o.estado==="Resuelto"||o.estado==="Cerrado"?"#dcfce7":o.estado==="En proceso"?"#dbeafe":"#fef9c3"};color:${o.estado==="Resuelto"||o.estado==="Cerrado"?"#166534":o.estado==="En proceso"?"#1e40af":"#854d0e"}">${o.estado||"Pendiente"}</span>
+                    </td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${o.tecnico||"—"}</td>
+                  </tr>`).join("");
+
+                const rowsIncidencias = incidenciasDelMes.slice(0,20).map(i=>`
+                  <tr>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;font-weight:600">${i.ubicacion||"—"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px">${(i.descripcion||"").slice(0,60)}${(i.descripcion||"").length>60?"…":""}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:10px">
+                      <span style="padding:2px 8px;border-radius:10px;font-weight:700;background:${i.estado==="Resuelto"?"#dcfce7":"#fee2e2"};color:${i.estado==="Resuelto"?"#166534":"#991b1b"}">${i.estado||"Activa"}</span>
+                    </td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${new Date(i.created_at||i.fecha).toLocaleDateString("es")}</td>
+                  </tr>`).join("");
+
+                const rowsMateriales = materialesUsados.length>0 ? materialesUsados.map(m=>`
+                  <tr>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;font-weight:600">${m.material}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;text-align:center">${m.cantidad||"—"} ${m.unidad||""}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px">${m.area||"—"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${m.ph}</td>
+                  </tr>`).join("") : `<tr><td colspan="4" style="padding:12px;text-align:center;color:#94a3b8;font-size:12px">Sin materiales registrados este mes</td></tr>`;
+
+                const notas = notaRM.trim() ? `
+                  <div style="margin-top:32px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px 24px">
+                    <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">📝 Observaciones y notas adicionales</div>
+                    <div style="font-size:13px;color:#78350f;line-height:1.8;white-space:pre-wrap">${notaRM.trim()}</div>
+                  </div>` : "";
+
+                const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/>
+<title>Reporte Mensual — ${MESES[mesRM]} ${anioRM}</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'IBM Plex Sans',Arial,sans-serif;color:#0f172a;background:#fff;font-size:13px}
+  .page{max-width:900px;margin:0 auto;padding:40px 48px}
+  .cover{background:linear-gradient(135deg,#0D1726 0%,#1e3a5f 60%,#2563eb 100%);color:#fff;padding:48px;border-radius:12px;margin-bottom:40px;position:relative;overflow:hidden}
+  .cover::after{content:"";position:absolute;right:-60px;top:-60px;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.04)}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+  .kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center}
+  .kpi.green{background:#f0fdf4;border-color:#86efac}.kpi.blue{background:#eff6ff;border-color:#93c5fd}.kpi.yellow{background:#fffbeb;border-color:#fde68a}.kpi.red{background:#fef2f2;border-color:#fca5a5}
+  .kpi-val{font-size:28px;font-weight:800;line-height:1}
+  .kpi-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:5px;opacity:.7}
+  .sec{margin-bottom:36px}
+  .sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e2e8f0}
+  .sec-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .sec-title{font-size:15px;font-weight:700;color:#0f172a}
+  .sec-sub{font-size:12px;color:#64748b;margin-top:1px}
+  table{width:100%;border-collapse:collapse}
+  th{padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;background:#f8fafc;color:#475569;border-bottom:2px solid #e2e8f0}
+  tr:hover td{background:#f8fafc}
+  @media print{.page{padding:20px}.cover{border-radius:0}}
+</style>
+</head><body><div class="page">
+
+  <!-- COVER -->
+  <div class="cover">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:32px">
+      <img src="${LOGO_B64}" style="width:56px;height:56px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.1);padding:4px"/>
+      <div>
+        <div style="font-size:11px;font-weight:600;opacity:.6;text-transform:uppercase;letter-spacing:1px">DC&S · Fundación Buenaventura</div>
+        <div style="font-size:22px;font-weight:800;margin-top:2px">Reporte Mensual de Actividades</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
+      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Período</div><div style="font-size:20px;font-weight:700;margin-top:4px">${MESES[mesRM]} ${anioRM}</div></div>
+      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Generado</div><div style="font-size:13px;font-weight:600;margin-top:4px">${fechaGen}</div><div style="font-size:11px;opacity:.6">${horaGen}</div></div>
+      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Preparado por</div><div style="font-size:13px;font-weight:600;margin-top:4px">${usuario?.nombre||"Administración"}</div><div style="font-size:11px;opacity:.6">${usuario?.rol||""}</div></div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi blue"><div class="kpi-val" style="color:#1d4ed8">${ordenesDelMes.length}</div><div class="kpi-lbl">Órdenes del mes</div></div>
+    <div class="kpi green"><div class="kpi-val" style="color:#15803d">${resueltas.length}</div><div class="kpi-lbl">Resueltas</div></div>
+    <div class="kpi yellow"><div class="kpi-val" style="color:#b45309">${enProceso.length + pendientes.length}</div><div class="kpi-lbl">En proceso / pendientes</div></div>
+    <div class="kpi red"><div class="kpi-val" style="color:#b91c1c">${incidenciasDelMes.length}</div><div class="kpi-lbl">Incidencias</div></div>
+  </div>
+  <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi"><div class="kpi-val" style="color:#0f172a">${reportesDelMes.length}</div><div class="kpi-lbl">Reportes conserjes</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#7c3aed">${reportesIngDelMes.length}</div><div class="kpi-lbl">Reportes ingeniería</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:#0891b2">${materialesUsados.length}</div><div class="kpi-lbl">Materiales instalados</div></div>
+  </div>
+
+  <!-- ÓRDENES POR PH -->
+  ${Object.keys(porPH).length>0 ? `
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-ico" style="background:#eff6ff">🏢</div>
+      <div><div class="sec-title">Actividad por Propiedad Horizontal</div><div class="sec-sub">${Object.keys(porPH).length} PH con actividad este mes</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Propiedad</th><th style="text-align:center">Total</th><th style="text-align:center">Resueltas</th><th style="text-align:center">Pendientes</th><th>Tipos de trabajo</th></tr></thead>
+      <tbody>${rowsOrdenesPorPH}</tbody>
+    </table>
+  </div>` : ""}
+
+  <!-- DETALLE ÓRDENES -->
+  ${ordenesDelMes.length>0 ? `
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-ico" style="background:#f0fdf4">📋</div>
+      <div><div class="sec-title">Órdenes de Trabajo${ordenesDelMes.length>50?" (primeras 50)":""}</div><div class="sec-sub">${ordenesDelMes.length} órdenes registradas en ${MESES[mesRM]}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>ID</th><th>PH</th><th>Tipo</th><th>Descripción</th><th>Estado</th><th>Técnico</th></tr></thead>
+      <tbody>${rowsOrdenes}</tbody>
+    </table>
+  </div>` : `<div class="sec"><div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:24px;text-align:center;color:#94a3b8">Sin órdenes de trabajo en ${MESES[mesRM]} ${anioRM}</div></div>`}
+
+  <!-- INCIDENCIAS -->
+  ${incidenciasDelMes.length>0 ? `
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-ico" style="background:#fef2f2">⚑</div>
+      <div><div class="sec-title">Incidencias de Calle</div><div class="sec-sub">${incidenciasDelMes.length} incidencia${incidenciasDelMes.length!==1?"s":""} reportada${incidenciasDelMes.length!==1?"s":""}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Ubicación</th><th>Descripción</th><th>Estado</th><th>Fecha</th></tr></thead>
+      <tbody>${rowsIncidencias}</tbody>
+    </table>
+  </div>` : ""}
+
+  <!-- MATERIALES -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-ico" style="background:#f5f3ff">🔧</div>
+      <div><div class="sec-title">Materiales Instalados</div><div class="sec-sub">Materiales registrados en reportes de ingeniería</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Material</th><th style="text-align:center">Cantidad</th><th>Área de uso</th><th>PH</th></tr></thead>
+      <tbody>${rowsMateriales}</tbody>
+    </table>
+  </div>
+
+  ${notas}
+
+  <!-- FIRMA -->
+  <div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;display:flex;justify-content:space-between;align-items:flex-end">
+    <div>
+      <img src="${LOGO_B64}" style="width:44px;height:44px;object-fit:contain;opacity:.5"/>
+      <div style="font-size:10px;color:#94a3b8;margin-top:6px">DC&S · Fundación Buenaventura</div>
+      <div style="font-size:10px;color:#cbd5e1">Sistema de Gestión de Propiedades</div>
+    </div>
+    <div style="text-align:right">
+      <div style="width:200px;border-top:1px solid #94a3b8;padding-top:8px;font-size:11px;color:#64748b">${usuario?.nombre||"Administración"}</div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:2px">Firma y sello</div>
+    </div>
+  </div>
+
+</div></body></html>`;
+
+                const w = window.open("","_blank");
+                if(w){ w.document.write(html); w.document.close(); setTimeout(()=>w.print(),800); }
+                setGenerando(false);
+              },200);
+            };
+
+            return (
+              <div style={{padding: isMobile?"12px":"24px", maxWidth:700, margin:"0 auto"}}>
+                {/* Header */}
+                <div style={{background:"linear-gradient(135deg,#0D1726,#1e3a5f)",borderRadius:12,padding:isMobile?"20px":"28px",color:"#fff",marginBottom:24}}>
+                  <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
+                    <span style={{fontSize:28}}>📊</span>
+                    <div>
+                      <div style={{fontSize:isMobile?16:18,fontWeight:800}}>Reporte Mensual</div>
+                      <div style={{fontSize:12,opacity:.6,marginTop:2}}>Genera el informe de actividades del mes para la Junta Directiva</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Selector de mes */}
+                <div style={{background:T.surfacePrimary,border:`1px solid ${T.borderDefault}`,borderRadius:10,padding:"18px 20px",marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:T.textSecondary,textTransform:"uppercase",letterSpacing:".6px",marginBottom:12}}>📅 Período del reporte</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    <div>
+                      <label style={{fontSize:11,color:T.textSecondary,fontWeight:600,display:"block",marginBottom:4}}>Mes</label>
+                      <select value={mesRM} onChange={e=>setMesRM(+e.target.value)} style={{...s.select,width:"100%"}}>
+                        {MESES.map((m,i)=><option key={i} value={i}>{m}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{fontSize:11,color:T.textSecondary,fontWeight:600,display:"block",marginBottom:4}}>Año</label>
+                      <select value={anioRM} onChange={e=>setAnioRM(+e.target.value)} style={{...s.select,width:"100%"}}>
+                        {[hoy.getFullYear()-1, hoy.getFullYear(), hoy.getFullYear()+1].map(a=><option key={a} value={a}>{a}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Resumen en tiempo real */}
+                <div style={{background:T.surfacePrimary,border:`1px solid ${T.borderDefault}`,borderRadius:10,padding:"18px 20px",marginBottom:16}}>
+                  <div style={{fontSize:12,fontWeight:700,color:T.textSecondary,textTransform:"uppercase",letterSpacing:".6px",marginBottom:14}}>📈 Resumen — {MESES[mesRM]} {anioRM}</div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+                    {[
+                      {val:ordenesDelMes.length, lbl:"Órdenes", color:"#2563eb", bg:"#eff6ff"},
+                      {val:resueltas.length, lbl:"Resueltas", color:"#16a34a", bg:"#f0fdf4"},
+                      {val:pendientes.length+enProceso.length, lbl:"Pendientes", color:"#d97706", bg:"#fffbeb"},
+                      {val:incidenciasDelMes.length, lbl:"Incidencias", color:"#dc2626", bg:"#fef2f2"},
+                      {val:reportesDelMes.length, lbl:"Rep. Conserje", color:"#7c3aed", bg:"#f5f3ff"},
+                      {val:materialesUsados.length, lbl:"Materiales", color:"#0891b2", bg:"#ecfeff"},
+                    ].map((k,i)=>(
+                      <div key={i} style={{background:k.bg,borderRadius:8,padding:"12px",textAlign:"center"}}>
+                        <div style={{fontSize:22,fontWeight:800,color:k.color,lineHeight:1}}>{k.val}</div>
+                        <div style={{fontSize:10,fontWeight:600,color:k.color,opacity:.7,marginTop:4,textTransform:"uppercase",letterSpacing:".4px"}}>{k.lbl}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notas */}
+                <div style={{background:T.surfacePrimary,border:`1px solid ${T.borderDefault}`,borderRadius:10,padding:"18px 20px",marginBottom:20}}>
+                  <div style={{fontSize:12,fontWeight:700,color:T.textSecondary,textTransform:"uppercase",letterSpacing:".6px",marginBottom:8}}>📝 Observaciones adicionales <span style={{fontWeight:400,textTransform:"none",fontSize:11}}>(opcional)</span></div>
+                  <textarea
+                    value={notaRM}
+                    onChange={e=>setNotaRM(e.target.value)}
+                    placeholder="Agrega notas, observaciones o comentarios que quieras incluir en el reporte..."
+                    rows={4}
+                    style={{...s.input,width:"100%",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}}
+                  />
+                </div>
+
+                {/* Botón generar */}
+                <button
+                  onClick={generarPDF}
+                  disabled={generando}
+                  style={{
+                    width:"100%", padding:"14px", border:"none", borderRadius:10, cursor:generando?"not-allowed":"pointer",
+                    background:generando?"#94a3b8":"linear-gradient(135deg,#2563eb,#1d4ed8)",
+                    color:"#fff", fontSize:15, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+                    boxShadow:generando?"none":"0 4px 14px rgba(37,99,235,0.4)", transition:"all .2s"
+                  }}
+                >
+                  {generando ? <><span style={{animation:"spin 1s linear infinite",display:"inline-block"}}>⏳</span> Generando...</> : <><span>⬇</span> Generar y Descargar PDF</>}
+                </button>
+                <div style={{textAlign:"center",fontSize:11,color:T.textSecondary,marginTop:8}}>
+                  Se abrirá una ventana para imprimir o guardar como PDF
+                </div>
               </div>
             );
           })()}
