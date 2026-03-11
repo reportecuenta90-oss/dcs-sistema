@@ -5369,10 +5369,10 @@ export default function App() {
           {vista==="reporteMensual" && (usuario?.rol==="admin"||usuario?.rol==="ingeniera") && (()=>{
             const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
             const hoy = new Date();
-            const [mesRM, setMesRM] = React.useState(hoy.getMonth());
-            const [anioRM, setAnioRM] = React.useState(hoy.getFullYear());
-            const [notaRM, setNotaRM] = React.useState("");
-            const [generando, setGenerando] = React.useState(false);
+            const [mesRM, setMesRM] = useState(hoy.getMonth());
+            const [anioRM, setAnioRM] = useState(hoy.getFullYear());
+            const [notaRM, setNotaRM] = useState("");
+            const [generando, setGenerando] = useState(false);
 
             // Filtrar datos del mes seleccionado
             const inicio = new Date(anioRM, mesRM, 1);
