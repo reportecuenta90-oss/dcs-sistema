@@ -445,6 +445,7 @@ export default function App() {
   const [diarFH,setDiarFH] = useState("");
   const [diarPHF,setDiarPHF] = useState("Todos");
   const [diarioPreview,setDiarioPreview] = useState(null); // diario en vista previa
+  const [showDiarioPreview,setShowDiarioPreview] = useState(false);
   const [diarioEditId,setDiarioEditId]   = useState(null); // id del diario en edición
   const [formDiario,setFormDiario] = useState({
     fecha: new Date().toISOString().split("T")[0],
@@ -2017,25 +2018,39 @@ export default function App() {
                     </button>
                   </div>
                   <div style={{maxHeight:280,overflowY:"auto"}}>
-                    {notifs.map(n=>(
-                      <div key={n.id} onClick={()=>setNotifs(p=>p.map(x=>x.id===n.id?{...x,read:true}:x))} style={{
-                        padding:"10px 16px",borderBottom:`1px solid ${T.borderSubtle}`,
-                        cursor:"pointer",display:"flex",alignItems:"flex-start",gap:10,
-                        background:!n.read?T.accentMuted:"transparent",
-                        transition:"background .1s",
-                      }}>
-                        <div style={{
-                          width:28,height:28,borderRadius:6,
-                          background:T.surfaceThird,
-                          display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,flexShrink:0,
-                        }}>{n.icon}</div>
-                        <div style={{flex:1}}>
-                          <div style={{fontSize:12,color:T.textPrimary,lineHeight:1.4}}>{n.msg}</div>
-                          <div style={{fontSize:10,color:T.textTertiary,marginTop:2}}>{n.time}</div>
+                    {notifs.length===0 && (
+                      <div style={{padding:"24px 16px",textAlign:"center",color:T.textTertiary,fontSize:12}}>Sin notificaciones</div>
+                    )}
+                    {notifs.map(n=>{
+                      // Determine where to navigate based on icon/msg
+                      const goTo = () => {
+                        setNotifs(p=>p.map(x=>x.id===n.id?{...x,read:true}:x));
+                        setShowNotifs(false);
+                        if(n.icon==="🚨"||n.icon==="⚠️"||n.msg?.includes("novedad")||n.msg?.includes("reporte")) navTo("reportesConserje");
+                        else if(n.icon==="📋"||n.msg?.includes("orden")||n.msg?.includes("Orden")) navTo("ordenes");
+                        else if(n.msg?.includes("incidencia")||n.msg?.includes("EMERGENCIA")||n.icon==="⚑") navTo("incidencias");
+                        else navTo("misNotificaciones");
+                      };
+                      return (
+                        <div key={n.id} onClick={goTo} style={{
+                          padding:"10px 16px",borderBottom:`1px solid ${T.borderSubtle}`,
+                          cursor:"pointer",display:"flex",alignItems:"flex-start",gap:10,
+                          background:!n.read?T.accentMuted:"transparent",
+                          transition:"background .1s",
+                        }}>
+                          <div style={{
+                            width:32,height:32,borderRadius:8,
+                            background:n.icon==="🚨"||n.icon==="⚠️"?T.dangerMuted:n.icon==="📋"?T.accentMuted:T.surfaceThird,
+                            display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,flexShrink:0,
+                          }}>{n.icon}</div>
+                          <div style={{flex:1,minWidth:0}}>
+                            <div style={{fontSize:12,color:T.textPrimary,lineHeight:1.4,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{n.msg}</div>
+                            <div style={{fontSize:10,color:T.textTertiary,marginTop:2}}>{n.time} · toca para ir →</div>
+                          </div>
+                          {!n.read && <div style={{width:7,height:7,borderRadius:"50%",background:T.dangerBase,flexShrink:0,marginTop:5}}/>}
                         </div>
-                        {!n.read && <div style={{width:6,height:6,borderRadius:"50%",background:T.accentBase,flexShrink:0,marginTop:5}}/>}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -5069,8 +5084,8 @@ export default function App() {
                           </div>
                         </div>
                         <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
-                          {d.alertas && <span style={{fontSize:10,background:T.dangerMuted,color:T.dangerText,border:`1px solid ${T.dangerBase}33`,padding:"3px 8px",borderRadius:4,fontWeight:700}}>🚨 Alerta</span>}
-                          {d.pendientes && <span style={{fontSize:10,background:T.successMuted,color:T.successText,border:`1px solid ${T.successBase}33`,padding:"3px 8px",borderRadius:4,fontWeight:700}}>📌 Pendientes</span>}
+                          {d.alertas && <span onClick={e=>{e.stopPropagation();setDiarioPreview(d);setShowDiarioPreview(true);}} style={{fontSize:10,background:T.dangerMuted,color:T.dangerText,border:`1px solid ${T.dangerBase}44`,padding:"4px 10px",borderRadius:20,fontWeight:700,cursor:"pointer"}}>🚨 Alerta</span>}
+                          {d.pendientes && <span onClick={e=>{e.stopPropagation();setDiarioPreview(d);setShowDiarioPreview(true);}} style={{fontSize:10,background:T.successMuted,color:T.successText,border:`1px solid ${T.successBase}44`,padding:"4px 10px",borderRadius:20,fontWeight:700,cursor:"pointer"}}>📌 {d.pendientes.split(" ").slice(0,3).join(" ")}…</span>}
                           {/* Botón Vista previa */}
                           <button onClick={()=>previewDiario(d)} style={{...s.btnSecondary,padding:"7px 12px",fontSize:12,display:"flex",alignItems:"center",gap:5}} title="Vista previa">
                             👁 Ver
