@@ -70,13 +70,14 @@ const PHS = [
 ];
 const TIPOS = ["Prueba de Pararrayos","Inspección Eléctrica","Plomería","Termografía","Aire Acondicionado","Mantenimiento General","Seguridad","Piscinas","Ascensores","Otro"];
 const TIPOS_REP_ING = ["Inspección General","Reporte Técnico","Reporte de Aprobación","Reporte de Rechazo","Reporte de Mantenimiento","Reporte de Seguridad"];
-const ESTADOS = ["Pendiente","En proceso","Resuelto","Cerrado"];
+const ESTADOS = ["Pendiente","En proceso","En revisión","Resuelto","Cerrado"];
 
 // Paleta semántica de estados — independiente del tema
 const ESTADO_CONFIG = {
   "Pendiente":  { bg:"#FFF7ED", text:"#C2410C", dot:"#F97316", border:"#FED7AA" },
   "En proceso": { bg:"#EFF6FF", text:"#1D4ED8", dot:"#3B82F6", border:"#BFDBFE" },
   "Resuelto":   { bg:"#F5F3FF", text:"#6D28D9", dot:"#8B5CF6", border:"#DDD6FE" },
+  "En revisión":{ bg:"#FFF7F0", text:"#C2410C", dot:"#F97316", border:"#FED7AA" },
   "Cerrado":    { bg:"#F0FDF4", text:"#15803D", dot:"#22C55E", border:"#BBF7D0" },
 };
 
@@ -118,7 +119,7 @@ const MENU = {
   admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"Proyectos PH"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"nueva",icon:"+",label:"Nueva Orden"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"misDiarios",icon:"📚",label:"Diarios de Campo"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"}],
   tecnico:  [{id:"misOrdenes",icon:"≡",label:"Mis Órdenes"},{id:"reportesIng",icon:"◈",label:"Reportes Ing."},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
   ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"reporteIngeniera",icon:"◈",label:"Mis Reportes"},{id:"nuevoReporteIngeniera",icon:"+",label:"Nuevo Reporte"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"}],
-  conserje: [{id:"nuevoReporte",icon:"+",label:"Nuevo Reporte"},{id:"reportesConserje",icon:"≡",label:"Mis Reportes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"misNotificaciones",icon:"🔔",label:"Notificaciones"}],
+  conserje: [{id:"nuevoReporte",icon:"+",label:"Nuevo Reporte"},{id:"reportesConserje",icon:"≡",label:"Mis Reportes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
 };
 
 const ESTADOS_REP = ["Pendiente","En revisión","Aprobado","Rechazado"];
@@ -380,7 +381,7 @@ export default function App() {
   const [reportes,setReportes]     = useState(() => lsGet("dcs_reportes", initReportes));
   const [repIng,setRepIng]         = useState(() => lsGet("dcs_repIng", initRepIng));
   const [fotos,setFotos]           = useState(() => lsGet("dcs_fotos", {}));
-  const [vista,setVista]           = useState("dashboard");
+  const [vista,setVista]           = useState(()=>{ const u=lsGet("dcs_session",null); if(!u) return "dashboard"; const sv=lsGet("dcs_vista",""); if(sv) return sv; return u.rol==="conserje"?"nuevoReporte":u.rol==="tecnico"?"misOrdenes":"dashboard"; });
   const [selOrden,setSelOrden]     = useState(null);
   const [selReporte,setSelReporte] = useState(null);
   const [selInc,setSelInc]         = useState(null);
@@ -699,10 +700,10 @@ export default function App() {
   function login(){
     const all=[...USUARIOS,...conserjes.filter(c=>!USUARIOS.find(u=>u.id===c.id))];
     const u=all.find(x=>x.correo===loginForm.correo&&x.pass===loginForm.pass);
-    if(u){setUsuario(u);lsSet("dcs_session",u);setLoginError("");setVista(u.rol==="conserje"?"nuevoReporte":u.rol==="tecnico"?"misOrdenes":"dashboard");}
+    if(u){setUsuario(u);lsSet("dcs_session",u);setLoginError("");const initV=u.rol==="conserje"?"nuevoReporte":u.rol==="tecnico"?"misOrdenes":"dashboard";lsSet("dcs_vista",initV);setVista(initV);}
     else setLoginError("Correo o contraseña incorrectos.");
   }
-  function logout(){setUsuario(null);lsSet("dcs_session",null);setVista("dashboard");setSelOrden(null);}
+  function logout(){setUsuario(null);lsSet("dcs_session",null);lsSet("dcs_vista","");setVista("dashboard");setSelOrden(null);}
 
   // Helper: format time as AM/PM
   const fmtHora = (h) => {
@@ -1591,7 +1592,7 @@ export default function App() {
     w.document.close();
   }
 
-  function navTo(id){setVista(id);setSelOrden(null);setSelReporte(null);setSelInc(null);setPhFiltro("Todos");setEstado("Todos");setTipo("Todos");setTecFiltro("Todos");setFechaDesde("");setFechaHasta("");setFiltrosRep({urgencia:"Todos",fecha:""});}
+  function navTo(id){lsSet("dcs_vista",id);setVista(id);setSelOrden(null);setSelReporte(null);setSelInc(null);setPhFiltro("Todos");setEstado("Todos");setTipo("Todos");setTecFiltro("Todos");setFechaDesde("");setFechaHasta("");setFiltrosRep({urgencia:"Todos",fecha:""});}
 
   const vistaLabel={dashboard:"Dashboard",phs:"Proyectos PH",ordenes:"Órdenes de Trabajo",misOrdenes:"Mis Órdenes",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Mis Reportes" : "Reportes de Conserjes",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual"};
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
@@ -2002,6 +2003,7 @@ export default function App() {
             </>}
 
             {/* Notificaciones */}
+            {(usuario?.rol==="admin"||usuario?.rol==="ingeniera") && (
             <div ref={notifRef} style={{position:"relative"}}>
               <button onClick={()=>setShowNotifs(!showNotifs)} style={{
                 cursor:"pointer",background:"none",border:`1px solid ${T.borderDefault}`,
@@ -2081,7 +2083,7 @@ export default function App() {
                 </div>
               )}
             </div>
-
+            )}
             {vista==="ordenes"&&usuario.rol==="admin" && (
               <button onClick={()=>setVista("nueva")} style={s.btnPrimary}>
                 + Nueva orden
@@ -2800,31 +2802,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Fotos */}
-              <div style={s.card}>
-                <div style={s.secTitle}>Registro fotográfico</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-                  {[
-                    {lbl:"Foto del daño",tipo:"dano",rol:"admin",color:T.dangerBase},
-                    {lbl:"Trabajo realizado",tipo:"resuelto",rol:"tecnico",color:T.successBase},
-                  ].map(({lbl,tipo,rol,color})=>(
-                    <div key={tipo}>
-                      <div style={{fontSize:10,fontWeight:600,color:T.textTertiary,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:8}}>{lbl}</div>
-                      {fotos[selOrden.id]?.[tipo]
-                        ? <img src={fotos[selOrden.id][tipo]} alt="" style={{width:"100%",height:120,objectFit:"cover",borderRadius:6}}/>
-                        : <div style={{width:"100%",height:120,borderRadius:6,border:`1px dashed ${T.borderStrong}`,background:T.surfaceSecond,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:T.textTertiary}}>Sin foto</div>
-                      }
-                      {usuario.rol===rol && (
-                        <label style={{display:"block",textAlign:"center",fontSize:11,fontWeight:600,marginTop:6,cursor:"pointer",color:color}}>
-                          Subir foto
-                          <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>subirFoto(selOrden.id,tipo,e.target.files[0])}/>
-                        </label>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Checklist */}
               {selOrden.checklist?.length>0 && (
                 <div style={s.card}>
@@ -2875,8 +2852,8 @@ export default function App() {
                 </div>
               )}
 
-              {/* Historial */}
-              {selOrden.historial?.length>0 && (
+              {/* Historial — solo admin e ing */}
+              {(usuario.rol==="admin"||usuario.rol==="ingeniera") && selOrden.historial?.length>0 && (
                 <div style={s.card}>
                   <div style={s.secTitle}>Historial de cambios</div>
                   {selOrden.historial.map((h,i)=>(
@@ -2891,12 +2868,61 @@ export default function App() {
                 </div>
               )}
 
+              {/* Registro fotográfico — admin sube foto del daño */}
+              {(usuario.rol==="admin"||usuario.rol==="ingeniera") && (
+                <div style={s.card}>
+                  <div style={s.secTitle}>📷 Registro fotográfico</div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                    {[
+                      {lbl:"Foto del daño",tipo:"dano",editable:usuario.rol==="admin"},
+                      {lbl:"Trabajo realizado",tipo:"resuelto",editable:false},
+                    ].map(({lbl,tipo,editable})=>(
+                      <div key={tipo}>
+                        <div style={{fontSize:10,fontWeight:600,color:T.textTertiary,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:8}}>{lbl}</div>
+                        {fotos[selOrden.id]?.[tipo]
+                          ? <img src={fotos[selOrden.id][tipo]} alt="" style={{width:"100%",height:130,objectFit:"cover",borderRadius:8,border:`2px solid ${tipo==="resuelto"?T.successBase:T.dangerBase}`}}/>
+                          : <div style={{width:"100%",height:130,borderRadius:8,border:`1px dashed ${T.borderStrong}`,background:T.surfaceSecond,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:T.textTertiary}}>{tipo==="resuelto"?"El técnico subirá aquí":"Sin foto"}</div>
+                        }
+                        {editable && (
+                          <label style={{display:"block",textAlign:"center",fontSize:11,fontWeight:600,marginTop:6,cursor:"pointer",color:T.dangerBase}}>
+                            📷 {fotos[selOrden.id]?.[tipo]?"Cambiar foto":"Subir foto del daño"}
+                            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>subirFoto(selOrden.id,tipo,e.target.files[0])}/>
+                          </label>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Acciones técnico */}
-              {usuario.rol==="tecnico" && (
+              {usuario.rol==="tecnico" && selOrden.estado!=="En revisión"&&selOrden.estado!=="Cerrado" && (
                 <div style={{...s.card,border:`1px solid ${T.borderStrong}`}}>
                   <div style={s.secTitle}>Actualizar estado</div>
-                  <div style={{display:"flex",gap:8}}>
-                    {["En proceso","Resuelto"].map(e=>{
+                  {/* Foto trabajo realizado */}
+                  <div style={{marginBottom:14}}>
+                    <div style={{fontSize:11,fontWeight:600,color:T.textSecondary,marginBottom:6}}>📷 Foto del trabajo realizado</div>
+                    {fotos[selOrden.id]?.resuelto
+                      ? <div style={{position:"relative",display:"inline-block"}}>
+                          <img src={fotos[selOrden.id].resuelto} alt="" style={{width:"100%",maxWidth:280,height:160,objectFit:"cover",borderRadius:8,border:`2px solid ${T.successBase}`}}/>
+                          <div style={{position:"absolute",top:4,right:4,background:T.successBase,color:"#fff",borderRadius:4,padding:"2px 6px",fontSize:10,fontWeight:700}}>✓ Subida</div>
+                        </div>
+                      : <div style={{width:"100%",height:100,borderRadius:8,border:`2px dashed ${T.borderStrong}`,background:T.surfaceSecond,display:"flex",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontSize:12,color:T.textTertiary}}>
+                          <label style={{cursor:"pointer",display:"flex",alignItems:"center",gap:6,color:T.accentBase,fontWeight:600,fontSize:12}}>
+                            📷 Subir foto de evidencia
+                            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>subirFoto(selOrden.id,"resuelto",e.target.files[0])}/>
+                          </label>
+                        </div>
+                    }
+                    {fotos[selOrden.id]?.resuelto && (
+                      <label style={{display:"block",fontSize:11,color:T.accentBase,fontWeight:600,marginTop:6,cursor:"pointer"}}>
+                        🔄 Cambiar foto
+                        <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>subirFoto(selOrden.id,"resuelto",e.target.files[0])}/>
+                      </label>
+                    )}
+                  </div>
+                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                    {["En proceso"].map(e=>{
                       const cfg=ESTADO_CONFIG[e];
                       const active=selOrden.estado===e;
                       return (
@@ -2910,6 +2936,33 @@ export default function App() {
                         }}>{e}</button>
                       );
                     })}
+                    <button
+                      onClick={()=>{
+                        if(!fotos[selOrden.id]?.resuelto){addToast("Sube una foto del trabajo antes de finalizar","warning");return;}
+                        actualizarOrden(selOrden.id,{estado:"En revisión"},`Trabajo finalizado — enviado a revisión`);
+                        pushNotif(`✅ Trabajo finalizado por ${usuario.nombre} — ${selOrden.ph||""}. Pendiente revisión.`,"📋");
+                      }}
+                      style={{
+                        padding:"8px 20px",borderRadius:6,fontSize:12,fontWeight:700,
+                        fontFamily:"'IBM Plex Sans',sans-serif",
+                        border:"none",
+                        background:"linear-gradient(135deg,#16a34a,#15803d)",
+                        color:"#fff",cursor:"pointer",
+                        boxShadow:"0 2px 8px rgba(22,163,74,0.35)",
+                      }}
+                    >✅ Marcar como Finalizado</button>
+                  </div>
+                </div>
+              )}
+              {/* Si ya está en revisión o cerrado, técnico ve estado */}
+              {usuario.rol==="tecnico" && (selOrden.estado==="En revisión"||selOrden.estado==="Cerrado") && (
+                <div style={{...s.card,background:selOrden.estado==="Cerrado"?T.successMuted:T.accentMuted,border:`1px solid ${selOrden.estado==="Cerrado"?T.successBase:T.accentBorder}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:22}}>{selOrden.estado==="Cerrado"?"✅":"⏳"}</span>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700,color:selOrden.estado==="Cerrado"?T.successText:T.accentText}}>{selOrden.estado==="Cerrado"?"Orden cerrada y aprobada":"Trabajo enviado — en revisión"}</div>
+                      <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{selOrden.estado==="Cerrado"?"La ingeniería aprobó esta orden.":"La ingeniería revisará y cerrará la orden."}</div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -2918,13 +2971,15 @@ export default function App() {
               {usuario.rol==="ingeniera" && (
                 <div style={{...s.card,border:`1px solid ${T.accentBorder}`}}>
                   <div style={{...s.secTitle,color:T.accentText}}>Aprobación — Ing. Mitche</div>
-                  {selOrden.estado==="Resuelto"&&!selOrden.aprobado
-                    ? <button onClick={()=>actualizarOrden(selOrden.id,{aprobado:true,estado:"Cerrado"},"Orden aprobada y cerrada")} style={{...s.btnPrimary,width:"100%",padding:12}}>
-                        ✓ Aprobar y cerrar orden
-                      </button>
+                  {(selOrden.estado==="En revisión"||selOrden.estado==="Resuelto")&&!selOrden.aprobado
+                    ? <div>
+                        {selOrden.estado==="En revisión" && <div style={{fontSize:11,color:T.accentBase,fontWeight:600,marginBottom:10}}>⏳ El técnico marcó esta orden como finalizada — revisa y aprueba.</div>}
+                        <button onClick={()=>actualizarOrden(selOrden.id,{aprobado:true,estado:"Cerrado"},"Orden aprobada y cerrada")} style={{...s.btnPrimary,width:"100%",padding:12}}>✓ Aprobar y cerrar orden</button>
+                        <button onClick={()=>actualizarOrden(selOrden.id,{estado:"En proceso"},"Orden devuelta al técnico para revisión")} style={{...s.btnSecondary,width:"100%",padding:10,marginTop:8,fontSize:12}}>↩ Devolver al técnico</button>
+                      </div>
                     : selOrden.aprobado
                       ? <div style={{fontSize:12,fontWeight:600,color:T.successText}}>✓ Orden aprobada y cerrada</div>
-                      : <div style={{fontSize:12,color:T.textTertiary}}>La orden debe estar en "Resuelto" para aprobar.</div>
+                      : <div style={{fontSize:12,color:T.textTertiary}}>La orden debe estar finalizada para aprobar.</div>
                   }
                 </div>
               )}
@@ -2932,15 +2987,32 @@ export default function App() {
               {/* Reasignar técnico */}
               {usuario.rol==="admin" && (
                 <div style={s.card}>
-                  <div style={s.secTitle}>Reasignar técnico</div>
+                  <div style={s.secTitle}>Asignación de técnico</div>
                   <select
                     value={selOrden.asignadoA||""}
-                    onChange={e=>actualizarOrden(selOrden.id,{asignadoA:e.target.value?Number(e.target.value):null},e.target.value?`Técnico reasignado: ${TECNICOS.find(t2=>t2.id===Number(e.target.value))?.nombre}`:"Técnico removido")}
+                    onChange={e=>actualizarOrden(selOrden.id,{asignadoA:e.target.value?Number(e.target.value):null,realizadoPor:e.target.value?"":selOrden.realizadoPor},e.target.value?`Técnico asignado: ${TECNICOS.find(t2=>t2.id===Number(e.target.value))?.nombre}`:"Técnico removido")}
                     style={s.select}
                   >
                     <option value="">Sin asignar</option>
                     {TECNICOS.map(t2=><option key={t2.id} value={t2.id}>{t2.nombre}</option>)}
                   </select>
+                  {!selOrden.asignadoA && (
+                    <div style={{marginTop:10}}>
+                      <div style={{fontSize:11,color:T.textTertiary,marginBottom:4}}>¿Quién realizó el trabajo? (si no hay técnico asignado)</div>
+                      <input
+                        key={selOrden.id+"realizadoPor"}
+                        defaultValue={selOrden.realizadoPor||""}
+                        onBlur={e=>{ if(e.target.value!==selOrden.realizadoPor) actualizarOrden(selOrden.id,{realizadoPor:e.target.value},e.target.value?`Trabajo realizado por: ${e.target.value}`:""); }}
+                        placeholder="Nombre de quien realizó el trabajo..."
+                        style={{...s.input,width:"100%"}}
+                      />
+                    </div>
+                  )}
+                  {(selOrden.realizadoPor||TECNICOS.find(t=>t.id===selOrden.asignadoA)) && (
+                    <div style={{marginTop:8,fontSize:11,color:T.successText,fontWeight:600}}>
+                      👷 {selOrden.asignadoA ? TECNICOS.find(t=>t.id===selOrden.asignadoA)?.nombre : selOrden.realizadoPor}
+                    </div>
+                  )}
                 </div>
               )}
 
