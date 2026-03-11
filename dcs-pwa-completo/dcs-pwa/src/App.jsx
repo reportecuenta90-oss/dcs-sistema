@@ -402,7 +402,7 @@ export default function App() {
   const [loginError,setLoginError] = useState("");
   const [formOrden,setFormOrden]   = useState({tipo:TIPOS[0],ph:PHS[0],ubicacion:"",fecha:"",notas:"",asignadoA:""});
   const [formRep,setFormRep]       = useState({observacion:"",novedad:false,foto:null,area:AREAS_EDIFICIO[0],urgencia:"Normal"});
-  const [formRepIng,setFormRepIng] = useState({tipo:TIPOS_REP_ING[0],ph:PHS[0],descripcion:"",hallazgos:"",recomendaciones:"",accionesTomadas:"",estado:"Pendiente",fotos:[]});
+  const [formRepIng,setFormRepIng] = useState({tipo:TIPOS_REP_ING[0],ph:PHS[0],descripcion:"",hallazgos:"",recomendaciones:"",accionesTomadas:"",estado:"Pendiente",fotos:[],materiales:[]});
   const [conserjes,setConserjes]   = useState(() => lsGet("dcs_conserjes", USUARIOS.filter(u=>u.rol==="conserje")));
   // Sistema de mensajería
   const [mensajes,setMensajes]     = useState(() => lsGet("dcs_mensajes", []));
@@ -447,7 +447,8 @@ export default function App() {
   const [diarioPreview,setDiarioPreview] = useState(null); // diario en vista previa
   const [showDiarioPreview,setShowDiarioPreview] = useState(false);
   const [showIdleWarning,setShowIdleWarning]   = useState(false);
-  const [matForm,setMatForm] = useState({material:"",cantidad:"",unidad:"",area:"",obs:""});
+  const [matForm,setMatForm]       = useState({material:"",cantidad:"",unidad:"",area:"",obs:""});
+  const [matFormIng,setMatFormIng] = useState({material:"",cantidad:"",unidad:"",area:"",obs:""});
   const [diarioEditId,setDiarioEditId]   = useState(null); // id del diario en edición
   const [formDiario,setFormDiario] = useState({
     fecha: new Date().toISOString().split("T")[0],
@@ -3843,6 +3844,68 @@ export default function App() {
                 </div>
               </div>
 
+
+              {/* Materiales instalados — Ing */}
+              <div style={s.card}>
+                <div style={s.secTitle}>🔧 Materiales instalados</div>
+                <div style={{background:T.accentMuted,border:`1.5px dashed ${T.accentBorder}`,borderRadius:10,padding:12,marginBottom:14}}>
+                  <div style={{marginBottom:8}}>
+                    <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Material</div>
+                    <input value={matFormIng.material} onChange={e=>setMatFormIng(p=>({...p,material:e.target.value}))} placeholder="Ej: Pintura, Tubo PVC, Cable..." style={{...s.input,width:"100%"}}/>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Cantidad</div>
+                      <input type="number" value={matFormIng.cantidad} onChange={e=>setMatFormIng(p=>({...p,cantidad:e.target.value}))} placeholder="0" style={{...s.input,width:"100%"}}/>
+                    </div>
+                    <div>
+                      <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Unidad</div>
+                      <select value={matFormIng.unidad} onChange={e=>setMatFormIng(p=>({...p,unidad:e.target.value}))} style={{...s.select,width:"100%"}}>
+                        <option value="">— Unidad —</option>
+                        {["m","pcs","kg","litros","rollo","caja","galón","par","unidad"].map(u=><option key={u}>{u}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{marginBottom:8}}>
+                    <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Área de uso</div>
+                    <input value={matFormIng.area} onChange={e=>setMatFormIng(p=>({...p,area:e.target.value}))} placeholder="Ej: Lobby, Piscina, Apt. 3B..." style={{...s.input,width:"100%"}}/>
+                  </div>
+                  <div style={{marginBottom:10}}>
+                    <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Observación <span style={{fontWeight:400,opacity:0.6}}>(opcional)</span></div>
+                    <input value={matFormIng.obs} onChange={e=>setMatFormIng(p=>({...p,obs:e.target.value}))} placeholder="Detalle adicional..." style={{...s.input,width:"100%"}}/>
+                  </div>
+                  <button
+                    onClick={()=>{
+                      if(!matFormIng.material.trim()) return addToast("Escribe el nombre del material","warning");
+                      const nuevo={material:matFormIng.material,cantidad:matFormIng.cantidad||"—",unidad:matFormIng.unidad||"pcs",area:matFormIng.area,obs:matFormIng.obs};
+                      setFormRepIng(p=>({...p,materiales:[...(p.materiales||[]),nuevo]}));
+                      setMatFormIng({material:"",cantidad:"",unidad:"",area:"",obs:""});
+                    }}
+                    style={{...s.btnPrimary,width:"100%",justifyContent:"center",display:"flex",alignItems:"center",gap:6}}
+                  >+ Agregar material</button>
+                </div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                  <span style={{fontSize:12,fontWeight:600,color:T.textPrimary}}>Materiales agregados</span>
+                  <span style={{background:T.accentMuted,border:`1px solid ${T.accentBorder}`,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:700,color:T.accentText}}>{(formRepIng.materiales||[]).length} items</span>
+                </div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {(formRepIng.materiales||[]).length===0 && (
+                    <div style={{textAlign:"center",padding:20,color:T.textTertiary,fontSize:12,background:T.surfaceSecond,borderRadius:8,border:`1.5px dashed ${T.borderDefault}`}}>📦 Aún no hay materiales agregados</div>
+                  )}
+                  {(formRepIng.materiales||[]).map((m,i)=>(
+                    <div key={i} style={{background:T.surfaceSecond,border:`1.5px solid ${T.accentBorder}`,borderRadius:10,padding:"11px 12px",display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:28,height:28,background:T.accentBase,color:"#fff",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0}}>{i+1}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:700,color:T.accentText,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.material}</div>
+                        <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{m.cantidad} {m.unidad}{m.area?` · 📍 ${m.area}`:""}</div>
+                        {m.obs&&<div style={{fontSize:10,color:T.textTertiary,marginTop:1,fontStyle:"italic",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>💬 {m.obs}</div>}
+                      </div>
+                      <button onClick={()=>setFormRepIng(p=>({...p,materiales:(p.materiales||[]).filter((_,j)=>j!==i)}))}
+                        style={{background:T.dangerMuted,border:`1px solid ${T.dangerBase}33`,color:T.dangerText,borderRadius:6,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,cursor:"pointer",flexShrink:0}}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
               {/* Botón crear */}
               <button onClick={crearRepIng} style={{...s.btnPrimary,width:"100%",padding:14,fontSize:14}}>
                 ◈ Guardar Reporte de Campo
