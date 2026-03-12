@@ -450,8 +450,8 @@ export default function App() {
   const [showIdleWarning,setShowIdleWarning]   = useState(false);
   const [matForm,setMatForm]       = useState({material:"",cantidad:"",unidad:"",area:"",obs:""});
   const [matFormIng,setMatFormIng] = useState({material:"",cantidad:"",unidad:"",area:"",obs:""});
-  const [mesRM,setMesRM]           = useState(new Date().getMonth());
-  const [anioRM,setAnioRM]         = useState(new Date().getFullYear());
+  const [mesRM,setMesRM]           = useState(()=>new Date().getMonth());
+  const [anioRM,setAnioRM]         = useState(()=>new Date().getFullYear());
   const [notaRM,setNotaRM]         = useState("");
   const [generando,setGenerando]   = useState(false);
   const [diarioEditId,setDiarioEditId]   = useState(null); // id del diario en edición
@@ -5612,7 +5612,7 @@ export default function App() {
                     <div>
                       <label style={{fontSize:11,color:T.textSecondary,fontWeight:600,display:"block",marginBottom:4}}>Año</label>
                       <select value={anioRM} onChange={e=>setAnioRM(+e.target.value)} style={{...s.select,width:"100%"}}>
-                        {[hoy.getFullYear()-1, hoy.getFullYear(), hoy.getFullYear()+1].map(a=><option key={a} value={a}>{a}</option>)}
+                        {[anioRM-1, anioRM, anioRM+1].map(a=><option key={a} value={a}>{a}</option>)}
                       </select>
                     </div>
                   </div>
