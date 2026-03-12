@@ -5375,18 +5375,36 @@ export default function App() {
 
             // Filtrar datos del mes seleccionado
             const inicio = new Date(anioRM, mesRM, 1);
-            const fin    = new Date(anioRM, mesRM+1, 0);
+            const fin    = new Date(anioRM, mesRM+1, 0, 23, 59, 59);
             const enMes  = (fecha) => { if(!fecha) return false; const d=new Date(fecha); return d>=inicio && d<=fin; };
 
+            // Mes anterior para comparativo
+            const inicioAnt = new Date(anioRM, mesRM-1, 1);
+            const finAnt    = new Date(anioRM, mesRM, 0, 23, 59, 59);
+            const enMesAnt  = (fecha) => { if(!fecha) return false; const d=new Date(fecha); return d>=inicioAnt && d<=finAnt; };
+
             const ordenesDelMes    = ordenes.filter(o => enMes(o.fecha_creacion||o.created_at));
+            const ordenesAnt       = ordenes.filter(o => enMesAnt(o.fecha_creacion||o.created_at));
             const resueltas        = ordenesDelMes.filter(o => o.estado==="Resuelto"||o.estado==="Cerrado");
-            const enProceso        = ordenesDelMes.filter(o => o.estado==="En proceso");
+            const enProceso        = ordenesDelMes.filter(o => o.estado==="En proceso"||o.estado==="En revisión");
             const pendientes       = ordenesDelMes.filter(o => o.estado==="Pendiente");
             const reportesDelMes   = reportes.filter(r => enMes(r.created_at||r.fecha));
             const incidenciasDelMes= incidencias.filter(i => enMes(i.created_at||i.fecha));
             const reportesIngDelMes= repIng.filter(r => enMes(r.created_at||r.fecha));
 
-            // Agrupar órdenes por PH
+            // Tasa de resolución
+            const tasaRes = ordenesDelMes.length>0 ? Math.round((resueltas.length/ordenesDelMes.length)*100) : 0;
+            const tasaResAnt = ordenesAnt.length>0 ? Math.round((ordenesAnt.filter(o=>o.estado==="Resuelto"||o.estado==="Cerrado").length/ordenesAnt.length)*100) : 0;
+            const diff = tasaRes - tasaResAnt;
+
+            // Tiempo promedio resolución (días)
+            const tiemposRes = resueltas.filter(o=>o.fecha_creacion&&o.updated_at).map(o=>{
+              const d1=new Date(o.fecha_creacion), d2=new Date(o.updated_at);
+              return (d2-d1)/(1000*60*60*24);
+            });
+            const tiemProm = tiemposRes.length>0 ? (tiemposRes.reduce((a,b)=>a+b,0)/tiemposRes.length).toFixed(1) : "—";
+
+            // Órdenes por PH
             const porPH = {};
             ordenesDelMes.forEach(o=>{
               const ph = o.ph||"Sin PH";
@@ -5397,13 +5415,25 @@ export default function App() {
               porPH[ph].tipos[tipo] = (porPH[ph].tipos[tipo]||0)+1;
             });
 
-            // Materiales usados (de reportes de ingeniera)
+            // Actividad por técnico
+            const porTecnico = {};
+            ordenesDelMes.forEach(o=>{
+              const tec = o.tecnico||TECNICOS.find(t=>t.id===o.asignadoA)?.nombre||"Sin asignar";
+              if(!porTecnico[tec]) porTecnico[tec]={total:0,resueltas:0};
+              porTecnico[tec].total++;
+              if(o.estado==="Resuelto"||o.estado==="Cerrado") porTecnico[tec].resueltas++;
+            });
+
+            // Materiales usados
             const materialesUsados = [];
             reportesIngDelMes.forEach(r=>{
               (r.materiales||[]).forEach(m=>{
                 if(m.material) materialesUsados.push({...m, ph: r.ph||"", orden: r.orden_id||""});
               });
             });
+
+            // Órdenes críticas (emergencias o pendientes de hace más de 7 días)
+            const criticas = ordenesDelMes.filter(o=>o.urgencia==="Emergencia"||(o.estado==="Pendiente"&&o.fecha_creacion&&(new Date()-new Date(o.fecha_creacion))>7*24*60*60*1000));
 
             const generarPDF = () => {
               setGenerando(true);
@@ -5412,31 +5442,83 @@ export default function App() {
                 const fechaGen = ahora.toLocaleDateString("es",{year:"numeric",month:"long",day:"numeric"});
                 const horaGen  = ahora.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"});
 
-                const rowsOrdenesPorPH = Object.entries(porPH).sort((a,b)=>b[1].total-a[1].total).map(([ph,d])=>`
-                  <tr>
+                // Gráfica SVG barras por estado
+                const barData = [
+                  {lbl:"Resueltas",val:resueltas.length,color:"#16a34a"},
+                  {lbl:"En proceso",val:enProceso.length,color:"#2563eb"},
+                  {lbl:"Pendientes",val:pendientes.length,color:"#d97706"},
+                ];
+                const maxVal = Math.max(...barData.map(b=>b.val),1);
+                const barSVG = `<svg width="320" height="120" xmlns="http://www.w3.org/2000/svg">
+                  ${barData.map((b,i)=>{
+                    const barH = Math.round((b.val/maxVal)*80);
+                    const x = 20+i*100;
+                    return `<rect x="${x}" y="${100-barH}" width="60" height="${barH}" rx="4" fill="${b.color}" opacity="0.9"/>
+                    <text x="${x+30}" y="115" text-anchor="middle" font-size="9" fill="#64748b" font-family="Arial">${b.lbl}</text>
+                    <text x="${x+30}" y="${95-barH}" text-anchor="middle" font-size="11" font-weight="700" fill="${b.color}" font-family="Arial">${b.val}</text>`;
+                  }).join("")}
+                </svg>`;
+
+                // Gráfica donut tasa resolución SVG
+                const pct = tasaRes/100;
+                const r2=40, cx=50, cy=50, circ=2*Math.PI*r2;
+                const donutSVG = `<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="${cx}" cy="${cy}" r="${r2}" fill="none" stroke="#e2e8f0" stroke-width="12"/>
+                  <circle cx="${cx}" cy="${cy}" r="${r2}" fill="none" stroke="${tasaRes>=80?"#16a34a":tasaRes>=50?"#d97706":"#dc2626"}" stroke-width="12"
+                    stroke-dasharray="${circ*pct} ${circ*(1-pct)}" stroke-dashoffset="${circ*0.25}" stroke-linecap="round"/>
+                  <text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="14" font-weight="800" fill="#0f172a" font-family="Arial">${tasaRes}%</text>
+                </svg>`;
+
+                const rowsOrdenesPorPH = Object.entries(porPH).sort((a,b)=>b[1].total-a[1].total).map(([ph,d])=>{
+                  const tasa = d.total>0?Math.round((d.resueltas/d.total)*100):0;
+                  return `<tr>
                     <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:600;color:#0f172a">${ph}</td>
                     <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;font-weight:700;color:#2563eb">${d.total}</td>
                     <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#16a34a;font-weight:600">${d.resueltas}</td>
                     <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#d97706;font-weight:600">${d.total-d.resueltas}</td>
-                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${Object.entries(d.tipos).map(([t,n])=>`${t} (${n})`).join(", ")}</td>
-                  </tr>`).join("");
+                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center">
+                      <span style="background:${tasa>=80?"#f0fdf4":tasa>=50?"#fffbeb":"#fef2f2"};color:${tasa>=80?"#15803d":tasa>=50?"#b45309":"#b91c1c"};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">${tasa}%</span>
+                    </td>
+                  </tr>`;
+                }).join("");
+
+                const rowsTecnicos = Object.entries(porTecnico).sort((a,b)=>b[1].total-a[1].total).map(([tec,d])=>{
+                  const tasa = d.total>0?Math.round((d.resueltas/d.total)*100):0;
+                  return `<tr>
+                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:600">${tec}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;font-weight:700;color:#2563eb">${d.total}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#16a34a;font-weight:600">${d.resueltas}</td>
+                    <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center">
+                      <span style="background:${tasa>=80?"#f0fdf4":"#fffbeb"};color:${tasa>=80?"#15803d":"#b45309"};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">${tasa}%</span>
+                    </td>
+                  </tr>`;
+                }).join("");
+
+                const rowsCriticas = criticas.length>0 ? criticas.map(o=>`
+                  <tr>
+                    <td style="padding:7px 10px;border-bottom:1px solid #fee2e2;font-size:11px;font-weight:600;color:#dc2626">${o.urgencia==="Emergencia"?"🚨":"⏰"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #fee2e2;font-size:11px;font-weight:600">${o.ph||"—"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #fee2e2;font-size:11px">${o.tipo||"General"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #fee2e2;font-size:11px">${(o.descripcion||"").slice(0,60)}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #fee2e2;font-size:11px;color:#64748b">${o.estado}</td>
+                  </tr>`).join("") : `<tr><td colspan="5" style="padding:12px;text-align:center;color:#94a3b8;font-size:12px">Sin órdenes críticas este mes ✓</td></tr>`;
 
                 const rowsOrdenes = ordenesDelMes.slice(0,50).map(o=>`
                   <tr>
-                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;font-family:monospace;color:#64748b">#${o.id?.toString().slice(-4)||"—"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:10px;font-family:monospace;color:#64748b">#${o.id?.toString().slice(-4)||"—"}</td>
                     <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;font-weight:600">${o.ph||"—"}</td>
                     <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px">${o.tipo||"General"}</td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px">${(o.descripcion||"").slice(0,50)}${(o.descripcion||"").length>50?"…":""}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px">${(o.descripcion||"").slice(0,45)}${(o.descripcion||"").length>45?"…":""}</td>
                     <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:10px">
                       <span style="padding:2px 8px;border-radius:10px;font-weight:700;background:${o.estado==="Resuelto"||o.estado==="Cerrado"?"#dcfce7":o.estado==="En proceso"?"#dbeafe":"#fef9c3"};color:${o.estado==="Resuelto"||o.estado==="Cerrado"?"#166534":o.estado==="En proceso"?"#1e40af":"#854d0e"}">${o.estado||"Pendiente"}</span>
                     </td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${o.tecnico||"—"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${o.tecnico||TECNICOS.find(t=>t.id===o.asignadoA)?.nombre||"—"}</td>
                   </tr>`).join("");
 
                 const rowsIncidencias = incidenciasDelMes.slice(0,20).map(i=>`
                   <tr>
                     <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;font-weight:600">${i.ubicacion||"—"}</td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px">${(i.descripcion||"").slice(0,60)}${(i.descripcion||"").length>60?"…":""}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px">${(i.descripcion||"").slice(0,55)}${(i.descripcion||"").length>55?"…":""}</td>
                     <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:10px">
                       <span style="padding:2px 8px;border-radius:10px;font-weight:700;background:${i.estado==="Resuelto"?"#dcfce7":"#fee2e2"};color:${i.estado==="Resuelto"?"#166534":"#991b1b"}">${i.estado||"Activa"}</span>
                     </td>
@@ -5451,7 +5533,7 @@ export default function App() {
                     <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${m.ph}</td>
                   </tr>`).join("") : `<tr><td colspan="4" style="padding:12px;text-align:center;color:#94a3b8;font-size:12px">Sin materiales registrados este mes</td></tr>`;
 
-                const notas = notaRM.trim() ? `
+                const notasHTML = notaRM.trim() ? `
                   <div style="margin-top:32px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px 24px">
                     <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">📝 Observaciones y notas adicionales</div>
                     <div style="font-size:13px;color:#78350f;line-height:1.8;white-space:pre-wrap">${notaRM.trim()}</div>
@@ -5463,14 +5545,14 @@ export default function App() {
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'IBM Plex Sans',Arial,sans-serif;color:#0f172a;background:#fff;font-size:13px}
-  .page{max-width:900px;margin:0 auto;padding:40px 48px}
-  .cover{background:linear-gradient(135deg,#0D1726 0%,#1e3a5f 60%,#2563eb 100%);color:#fff;padding:48px;border-radius:12px;margin-bottom:40px;position:relative;overflow:hidden}
-  .cover::after{content:"";position:absolute;right:-60px;top:-60px;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,0.04)}
-  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+  .page{max-width:920px;margin:0 auto;padding:40px 48px}
+  .cover{background:linear-gradient(135deg,#0D1726 0%,#1e3a5f 60%,#2563eb 100%);color:#fff;padding:48px;border-radius:12px;margin-bottom:40px}
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
   .kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center}
-  .kpi.green{background:#f0fdf4;border-color:#86efac}.kpi.blue{background:#eff6ff;border-color:#93c5fd}.kpi.yellow{background:#fffbeb;border-color:#fde68a}.kpi.red{background:#fef2f2;border-color:#fca5a5}
+  .kpi.green{background:#f0fdf4;border-color:#86efac}.kpi.blue{background:#eff6ff;border-color:#93c5fd}.kpi.yellow{background:#fffbeb;border-color:#fde68a}.kpi.red{background:#fef2f2;border-color:#fca5a5}.kpi.purple{background:#f5f3ff;border-color:#c4b5fd}
   .kpi-val{font-size:28px;font-weight:800;line-height:1}
   .kpi-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:5px;opacity:.7}
+  .kpi-sub{font-size:10px;margin-top:3px;opacity:.5}
   .sec{margin-bottom:36px}
   .sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e2e8f0}
   .sec-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
@@ -5479,122 +5561,192 @@ export default function App() {
   table{width:100%;border-collapse:collapse}
   th{padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;background:#f8fafc;color:#475569;border-bottom:2px solid #e2e8f0}
   tr:hover td{background:#f8fafc}
-  @media print{.page{padding:20px}.cover{border-radius:0}}
+  .badge-green{background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+  .badge-red{background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+  .badge-yellow{background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+  @media print{
+    @page{size:A4;margin:15mm}
+    .page{padding:0}
+    .cover{border-radius:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .no-print{display:none}
+    table{page-break-inside:auto}
+    tr{page-break-inside:avoid}
+  }
 </style>
 </head><body><div class="page">
 
   <!-- COVER -->
   <div class="cover">
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:32px">
-      <img src="${LOGO_B64}" style="width:56px;height:56px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.1);padding:4px"/>
+      <img src="${LOGO_B64}" style="width:56px;height:56px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.1);padding:6px"/>
       <div>
-        <div style="font-size:11px;font-weight:600;opacity:.6;text-transform:uppercase;letter-spacing:1px">DC&S · Fundación Buenaventura</div>
-        <div style="font-size:22px;font-weight:800;margin-top:2px">Reporte Mensual de Actividades</div>
+        <div style="font-size:11px;font-weight:600;opacity:.55;text-transform:uppercase;letter-spacing:1.2px">DC&amp;S · Fundación Buenaventura</div>
+        <div style="font-size:24px;font-weight:800;margin-top:4px;line-height:1.1">Reporte Mensual<br>de Actividades</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
-      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Período</div><div style="font-size:20px;font-weight:700;margin-top:4px">${MESES[mesRM]} ${anioRM}</div></div>
-      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Generado</div><div style="font-size:13px;font-weight:600;margin-top:4px">${fechaGen}</div><div style="font-size:11px;opacity:.6">${horaGen}</div></div>
-      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Preparado por</div><div style="font-size:13px;font-weight:600;margin-top:4px">${usuario?.nombre||"Administración"}</div><div style="font-size:11px;opacity:.6">${usuario?.rol||""}</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;background:rgba(255,255,255,0.07);border-radius:8px;padding:20px">
+      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Período</div><div style="font-size:22px;font-weight:800;margin-top:6px">${MESES[mesRM]} ${anioRM}</div></div>
+      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Generado</div><div style="font-size:13px;font-weight:600;margin-top:6px">${fechaGen}</div><div style="font-size:11px;opacity:.55;margin-top:2px">${horaGen} hrs</div></div>
+      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Preparado por</div><div style="font-size:13px;font-weight:600;margin-top:6px">${usuario?.nombre||"Administración"}</div><div style="font-size:11px;opacity:.55;margin-top:2px;text-transform:capitalize">${usuario?.rol||""}</div></div>
     </div>
   </div>
 
-  <!-- KPIs -->
-  <div class="kpi-grid">
-    <div class="kpi blue"><div class="kpi-val" style="color:#1d4ed8">${ordenesDelMes.length}</div><div class="kpi-lbl">Órdenes del mes</div></div>
-    <div class="kpi green"><div class="kpi-val" style="color:#15803d">${resueltas.length}</div><div class="kpi-lbl">Resueltas</div></div>
-    <div class="kpi yellow"><div class="kpi-val" style="color:#b45309">${enProceso.length + pendientes.length}</div><div class="kpi-lbl">En proceso / pendientes</div></div>
-    <div class="kpi red"><div class="kpi-val" style="color:#b91c1c">${incidenciasDelMes.length}</div><div class="kpi-lbl">Incidencias</div></div>
-  </div>
-  <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="kpi"><div class="kpi-val" style="color:#0f172a">${reportesDelMes.length}</div><div class="kpi-lbl">Reportes conserjes</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:#7c3aed">${reportesIngDelMes.length}</div><div class="kpi-lbl">Reportes ingeniería</div></div>
-    <div class="kpi"><div class="kpi-val" style="color:#0891b2">${materialesUsados.length}</div><div class="kpi-lbl">Materiales instalados</div></div>
+  <!-- KPIs PRINCIPALES -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-ico" style="background:#eff6ff">📊</div>
+      <div><div class="sec-title">Resumen Ejecutivo</div><div class="sec-sub">Indicadores clave de ${MESES[mesRM]} ${anioRM}</div></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi blue"><div class="kpi-val" style="color:#1d4ed8">${ordenesDelMes.length}</div><div class="kpi-lbl">Órdenes del mes</div><div class="kpi-sub">${ordenesAnt.length>0?`vs ${ordenesAnt.length} mes ant.`:""}</div></div>
+      <div class="kpi green"><div class="kpi-val" style="color:#15803d">${resueltas.length}</div><div class="kpi-lbl">Resueltas</div><div class="kpi-sub">${tasaRes}% del total</div></div>
+      <div class="kpi yellow"><div class="kpi-val" style="color:#b45309">${enProceso.length+pendientes.length}</div><div class="kpi-lbl">En proceso/pend.</div><div class="kpi-sub">${enProceso.length} proceso · ${pendientes.length} pend.</div></div>
+      <div class="kpi red"><div class="kpi-val" style="color:#b91c1c">${incidenciasDelMes.length}</div><div class="kpi-lbl">Incidencias calle</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div class="kpi purple"><div class="kpi-val" style="color:#7c3aed">${reportesDelMes.length}</div><div class="kpi-lbl">Rep. conserjes</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#0891b2">${reportesIngDelMes.length}</div><div class="kpi-lbl">Rep. ingeniería</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#0f172a">${materialesUsados.length}</div><div class="kpi-lbl">Materiales usados</div></div>
+      <div class="kpi"><div class="kpi-val" style="color:#0f172a">${tiemProm}</div><div class="kpi-lbl">Días prom. resolución</div></div>
+    </div>
   </div>
 
+  <!-- GRÁFICAS -->
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-ico" style="background:#f0fdf4">📈</div>
+      <div><div class="sec-title">Análisis Visual</div><div class="sec-sub">Distribución de órdenes y tasa de resolución</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;background:#f8fafc;border-radius:8px;padding:20px">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Órdenes por estado</div>
+        ${barSVG}
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Tasa de resolución</div>
+        ${donutSVG}
+        <div style="font-size:11px;color:${diff>=0?"#16a34a":"#dc2626"};font-weight:700;margin-top:4px">${diff>=0?"↑":"↓"} ${Math.abs(diff)}% vs mes ant.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÓRDENES CRÍTICAS -->
+  ${criticas.length>0?`
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-ico" style="background:#fef2f2">🚨</div>
+      <div><div class="sec-title" style="color:#dc2626">Órdenes Críticas / Emergencias</div><div class="sec-sub">${criticas.length} orden${criticas.length!==1?"es":""} requieren atención especial</div></div>
+    </div>
+    <div style="border:1px solid #fca5a5;border-radius:8px;overflow:hidden">
+      <table>
+        <thead style="background:#fef2f2"><tr><th>!</th><th>PH</th><th>Tipo</th><th>Descripción</th><th>Estado</th></tr></thead>
+        <tbody>${rowsCriticas}</tbody>
+      </table>
+    </div>
+  </div>` : ""}
+
+  <!-- POR TÉCNICO -->
+  ${Object.keys(porTecnico).length>0?`
+  <div class="sec">
+    <div class="sec-hdr">
+      <div class="sec-ico" style="background:#f0fdf4">👷</div>
+      <div><div class="sec-title">Actividad por Técnico</div><div class="sec-sub">${Object.keys(porTecnico).length} técnico${Object.keys(porTecnico).length!==1?"s":""} activo${Object.keys(porTecnico).length!==1?"s":""} este mes</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Técnico</th><th style="text-align:center">Órdenes</th><th style="text-align:center">Resueltas</th><th style="text-align:center">Eficiencia</th></tr></thead>
+      <tbody>${rowsTecnicos}</tbody>
+    </table>
+  </div>`:""}
+
   <!-- ÓRDENES POR PH -->
-  ${Object.keys(porPH).length>0 ? `
+  ${Object.keys(porPH).length>0?`
   <div class="sec">
     <div class="sec-hdr">
       <div class="sec-ico" style="background:#eff6ff">🏢</div>
-      <div><div class="sec-title">Actividad por Propiedad Horizontal</div><div class="sec-sub">${Object.keys(porPH).length} PH con actividad este mes</div></div>
+      <div><div class="sec-title">Actividad por Propiedad Horizontal</div><div class="sec-sub">${Object.keys(porPH).length} PH con actividad</div></div>
     </div>
     <table>
-      <thead><tr><th>Propiedad</th><th style="text-align:center">Total</th><th style="text-align:center">Resueltas</th><th style="text-align:center">Pendientes</th><th>Tipos de trabajo</th></tr></thead>
+      <thead><tr><th>Propiedad</th><th style="text-align:center">Total</th><th style="text-align:center">Resueltas</th><th style="text-align:center">Pendientes</th><th style="text-align:center">Tasa</th></tr></thead>
       <tbody>${rowsOrdenesPorPH}</tbody>
     </table>
-  </div>` : ""}
+  </div>`:""}
 
   <!-- DETALLE ÓRDENES -->
-  ${ordenesDelMes.length>0 ? `
   <div class="sec">
     <div class="sec-hdr">
       <div class="sec-ico" style="background:#f0fdf4">📋</div>
-      <div><div class="sec-title">Órdenes de Trabajo${ordenesDelMes.length>50?" (primeras 50)":""}</div><div class="sec-sub">${ordenesDelMes.length} órdenes registradas en ${MESES[mesRM]}</div></div>
+      <div><div class="sec-title">Órdenes de Trabajo${ordenesDelMes.length>50?" (primeras 50)":""}</div><div class="sec-sub">${ordenesDelMes.length} órdenes en ${MESES[mesRM]}</div></div>
     </div>
-    <table>
+    ${ordenesDelMes.length>0?`<table>
       <thead><tr><th>ID</th><th>PH</th><th>Tipo</th><th>Descripción</th><th>Estado</th><th>Técnico</th></tr></thead>
       <tbody>${rowsOrdenes}</tbody>
-    </table>
-  </div>` : `<div class="sec"><div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:24px;text-align:center;color:#94a3b8">Sin órdenes de trabajo en ${MESES[mesRM]} ${anioRM}</div></div>`}
+    </table>`:`<div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:24px;text-align:center;color:#94a3b8">Sin órdenes en ${MESES[mesRM]} ${anioRM}</div>`}
+  </div>
 
   <!-- INCIDENCIAS -->
-  ${incidenciasDelMes.length>0 ? `
+  ${incidenciasDelMes.length>0?`
   <div class="sec">
     <div class="sec-hdr">
       <div class="sec-ico" style="background:#fef2f2">⚑</div>
-      <div><div class="sec-title">Incidencias de Calle</div><div class="sec-sub">${incidenciasDelMes.length} incidencia${incidenciasDelMes.length!==1?"s":""} reportada${incidenciasDelMes.length!==1?"s":""}</div></div>
+      <div><div class="sec-title">Incidencias de Calle</div><div class="sec-sub">${incidenciasDelMes.length} incidencia${incidenciasDelMes.length!==1?"s":""}</div></div>
     </div>
     <table>
       <thead><tr><th>Ubicación</th><th>Descripción</th><th>Estado</th><th>Fecha</th></tr></thead>
       <tbody>${rowsIncidencias}</tbody>
     </table>
-  </div>` : ""}
+  </div>`:""}
 
   <!-- MATERIALES -->
   <div class="sec">
     <div class="sec-hdr">
       <div class="sec-ico" style="background:#f5f3ff">🔧</div>
-      <div><div class="sec-title">Materiales Instalados</div><div class="sec-sub">Materiales registrados en reportes de ingeniería</div></div>
+      <div><div class="sec-title">Materiales Instalados</div><div class="sec-sub">Registrados en reportes de ingeniería</div></div>
     </div>
     <table>
-      <thead><tr><th>Material</th><th style="text-align:center">Cantidad</th><th>Área de uso</th><th>PH</th></tr></thead>
+      <thead><tr><th>Material</th><th style="text-align:center">Cantidad</th><th>Área</th><th>PH</th></tr></thead>
       <tbody>${rowsMateriales}</tbody>
     </table>
   </div>
 
-  ${notas}
+  ${notasHTML}
 
   <!-- FIRMA -->
   <div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;display:flex;justify-content:space-between;align-items:flex-end">
     <div>
-      <img src="${LOGO_B64}" style="width:44px;height:44px;object-fit:contain;opacity:.5"/>
-      <div style="font-size:10px;color:#94a3b8;margin-top:6px">DC&S · Fundación Buenaventura</div>
+      <img src="${LOGO_B64}" style="width:40px;height:40px;object-fit:contain;opacity:.4"/>
+      <div style="font-size:10px;color:#94a3b8;margin-top:6px">DC&amp;S · Fundación Buenaventura</div>
       <div style="font-size:10px;color:#cbd5e1">Sistema de Gestión de Propiedades</div>
     </div>
     <div style="text-align:right">
-      <div style="width:200px;border-top:1px solid #94a3b8;padding-top:8px;font-size:11px;color:#64748b">${usuario?.nombre||"Administración"}</div>
-      <div style="font-size:10px;color:#94a3b8;margin-top:2px">Firma y sello</div>
+      <div style="width:220px;border-top:1px solid #94a3b8;padding-top:8px;font-size:12px;font-weight:600;color:#374151">${usuario?.nombre||"Administración"}</div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:2px">Firma · ${usuario?.rol||""}</div>
     </div>
   </div>
 
-</div></body></html>`;
+</div>
+<script>window.onload=function(){window.print();}</script>
+</body></html>`;
 
-                const w = window.open("","_blank");
-                if(w){ w.document.write(html); w.document.close(); setTimeout(()=>w.print(),800); }
+                // Descarga directa como HTML (abre y auto-imprime/guarda)
+                const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+                const url  = URL.createObjectURL(blob);
+                const a    = document.createElement("a");
+                a.href = url; a.download = `Reporte-${MESES[mesRM]}-${anioRM}.html`;
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a); URL.revokeObjectURL(url);
                 setGenerando(false);
-              },200);
+              },300);
             };
 
             return (
-              <div style={{padding: isMobile?"12px":"24px", maxWidth:700, margin:"0 auto"}}>
+              <div style={{padding: isMobile?"12px":"24px", maxWidth:720, margin:"0 auto"}}>
                 {/* Header */}
                 <div style={{background:"linear-gradient(135deg,#0D1726,#1e3a5f)",borderRadius:12,padding:isMobile?"20px":"28px",color:"#fff",marginBottom:24}}>
                   <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
                     <span style={{fontSize:28}}>📊</span>
                     <div>
-                      <div style={{fontSize:isMobile?16:18,fontWeight:800}}>Reporte Mensual</div>
-                      <div style={{fontSize:12,opacity:.6,marginTop:2}}>Genera el informe de actividades del mes para la Junta Directiva</div>
+                      <div style={{fontSize:isMobile?16:18,fontWeight:800}}>Reporte Mensual de Actividades</div>
+                      <div style={{fontSize:12,opacity:.6,marginTop:2}}>Informe completo para la Junta Directiva</div>
                     </div>
                   </div>
                 </div>
@@ -5612,7 +5764,7 @@ export default function App() {
                     <div>
                       <label style={{fontSize:11,color:T.textSecondary,fontWeight:600,display:"block",marginBottom:4}}>Año</label>
                       <select value={anioRM} onChange={e=>setAnioRM(+e.target.value)} style={{...s.select,width:"100%"}}>
-                        {[anioRM-1, anioRM, anioRM+1].map(a=><option key={a} value={a}>{a}</option>)}
+                        {[anioRM-1,anioRM,anioRM+1].map(a=><option key={a} value={a}>{a}</option>)}
                       </select>
                     </div>
                   </div>
@@ -5621,7 +5773,7 @@ export default function App() {
                 {/* Resumen en tiempo real */}
                 <div style={{background:T.surfacePrimary,border:`1px solid ${T.borderDefault}`,borderRadius:10,padding:"18px 20px",marginBottom:16}}>
                   <div style={{fontSize:12,fontWeight:700,color:T.textSecondary,textTransform:"uppercase",letterSpacing:".6px",marginBottom:14}}>📈 Resumen — {MESES[mesRM]} {anioRM}</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:10}}>
                     {[
                       {val:ordenesDelMes.length, lbl:"Órdenes", color:"#2563eb", bg:"#eff6ff"},
                       {val:resueltas.length, lbl:"Resueltas", color:"#16a34a", bg:"#f0fdf4"},
@@ -5636,16 +5788,23 @@ export default function App() {
                       </div>
                     ))}
                   </div>
+                  <div style={{display:"flex",alignItems:"center",gap:10,background:tasaRes>=80?T.successMuted:tasaRes>=50?"#fffbeb":T.dangerMuted,borderRadius:8,padding:"10px 14px"}}>
+                    <span style={{fontSize:18}}>{tasaRes>=80?"✅":tasaRes>=50?"⚠️":"🔴"}</span>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:700,color:tasaRes>=80?T.successText:tasaRes>=50?"#b45309":T.dangerText}}>Tasa de resolución: {tasaRes}%</div>
+                      <div style={{fontSize:11,color:T.textTertiary}}>Tiempo promedio: {tiemProm} días · {diff>=0?"↑":"↓"} {Math.abs(diff)}% vs mes anterior</div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Notas */}
                 <div style={{background:T.surfacePrimary,border:`1px solid ${T.borderDefault}`,borderRadius:10,padding:"18px 20px",marginBottom:20}}>
-                  <div style={{fontSize:12,fontWeight:700,color:T.textSecondary,textTransform:"uppercase",letterSpacing:".6px",marginBottom:8}}>📝 Observaciones adicionales <span style={{fontWeight:400,textTransform:"none",fontSize:11}}>(opcional)</span></div>
+                  <div style={{fontSize:12,fontWeight:700,color:T.textSecondary,textTransform:"uppercase",letterSpacing:".6px",marginBottom:8}}>📝 Observaciones <span style={{fontWeight:400,textTransform:"none",fontSize:11}}>(opcional)</span></div>
                   <textarea
                     value={notaRM}
                     onChange={e=>setNotaRM(e.target.value)}
-                    placeholder="Agrega notas, observaciones o comentarios que quieras incluir en el reporte..."
-                    rows={4}
+                    placeholder="Agrega notas u observaciones para incluir en el reporte..."
+                    rows={3}
                     style={{...s.input,width:"100%",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}}
                   />
                 </div>
@@ -5655,16 +5814,16 @@ export default function App() {
                   onClick={generarPDF}
                   disabled={generando}
                   style={{
-                    width:"100%", padding:"14px", border:"none", borderRadius:10, cursor:generando?"not-allowed":"pointer",
+                    width:"100%",padding:"14px",border:"none",borderRadius:10,cursor:generando?"not-allowed":"pointer",
                     background:generando?"#94a3b8":"linear-gradient(135deg,#2563eb,#1d4ed8)",
-                    color:"#fff", fontSize:15, fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", gap:10,
-                    boxShadow:generando?"none":"0 4px 14px rgba(37,99,235,0.4)", transition:"all .2s"
+                    color:"#fff",fontSize:15,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:10,
+                    boxShadow:generando?"none":"0 4px 14px rgba(37,99,235,0.4)",transition:"all .2s"
                   }}
                 >
-                  {generando ? <><span style={{animation:"spin 1s linear infinite",display:"inline-block"}}>⏳</span> Generando...</> : <><span>⬇</span> Generar y Descargar PDF</>}
+                  {generando ? <>⏳ Generando...</> : <>⬇ Descargar Reporte PDF</>}
                 </button>
-                <div style={{textAlign:"center",fontSize:11,color:T.textSecondary,marginTop:8}}>
-                  Se abrirá una ventana para imprimir o guardar como PDF
+                <div style={{textAlign:"center",fontSize:11,color:T.textTertiary,marginTop:8}}>
+                  Se descarga como archivo HTML — ábrelo y guarda como PDF desde el navegador
                 </div>
               </div>
             );
