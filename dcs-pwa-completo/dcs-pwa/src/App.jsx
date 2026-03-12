@@ -450,6 +450,10 @@ export default function App() {
   const [showIdleWarning,setShowIdleWarning]   = useState(false);
   const [matForm,setMatForm]       = useState({material:"",cantidad:"",unidad:"",area:"",obs:""});
   const [matFormIng,setMatFormIng] = useState({material:"",cantidad:"",unidad:"",area:"",obs:""});
+  const [mesRM,setMesRM]           = useState(new Date().getMonth());
+  const [anioRM,setAnioRM]         = useState(new Date().getFullYear());
+  const [notaRM,setNotaRM]         = useState("");
+  const [generando,setGenerando]   = useState(false);
   const [diarioEditId,setDiarioEditId]   = useState(null); // id del diario en edición
   const [formDiario,setFormDiario] = useState({
     fecha: new Date().toISOString().split("T")[0],
@@ -5368,11 +5372,6 @@ export default function App() {
           {/* ── REPORTE MENSUAL ── */}
           {vista==="reporteMensual" && (usuario?.rol==="admin"||usuario?.rol==="ingeniera") && (()=>{
             const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-            const hoy = new Date();
-            const [mesRM, setMesRM] = useState(hoy.getMonth());
-            const [anioRM, setAnioRM] = useState(hoy.getFullYear());
-            const [notaRM, setNotaRM] = useState("");
-            const [generando, setGenerando] = useState(false);
 
             // Filtrar datos del mes seleccionado
             const inicio = new Date(anioRM, mesRM, 1);
