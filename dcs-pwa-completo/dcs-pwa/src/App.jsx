@@ -76,7 +76,7 @@ const ESTADOS = ["Pendiente","En proceso","En revisión","Resuelto","Cerrado"];
 const ESTADO_CONFIG = {
   "Pendiente":  { bg:"#FFF7ED", text:"#C2410C", dot:"#F97316", border:"#FED7AA" },
   "En proceso": { bg:"#EFF6FF", text:"#1D4ED8", dot:"#3B82F6", border:"#BFDBFE" },
-  "Resuelto":   { bg:"#F5F3FF", text:"#6D28D9", dot:"#8B5CF6", border:"#DDD6FE" },
+  "Resuelto":   { bg:"#F0FDF4", text:"#15803D", dot:"#16A34A", border:"#BBF7D0" },
   "En revisión":{ bg:"#FFF7F0", text:"#C2410C", dot:"#F97316", border:"#FED7AA" },
   "Cerrado":    { bg:"#F0FDF4", text:"#15803D", dot:"#22C55E", border:"#BBF7D0" },
 };
@@ -116,10 +116,10 @@ const initRepIng = [
 ];
 
 const MENU = {
-  admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"Proyectos PH"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"nueva",icon:"+",label:"Nueva Orden"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"misDiarios",icon:"📚",label:"Diarios de Campo"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"}],
-  tecnico:  [{id:"misOrdenes",icon:"≡",label:"Mis Órdenes"},{id:"reportesIng",icon:"◈",label:"Reportes Ing."},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
-  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"reportesConserje",icon:"◉",label:"Reportes"},{id:"reporteIngeniera",icon:"◈",label:"Mis Reportes"},{id:"nuevoReporteIngeniera",icon:"+",label:"Nuevo Reporte"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"}],
-  conserje: [{id:"nuevoReporte",icon:"+",label:"Nuevo Reporte"},{id:"reportesConserje",icon:"≡",label:"Mis Reportes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
+  admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"nueva",icon:"+",label:"Nueva Orden"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"misDiarios",icon:"📚",label:"Diarios de Campo"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"}],
+  tecnico:  [{id:"misOrdenes",icon:"≡",label:"Asignaciones"},{id:"reportesIng",icon:"◈",label:"Reportes Ing."},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
+  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora"},{id:"reporteIngeniera",icon:"◈",label:"Mis Reportes"},{id:"nuevoReporteIngeniera",icon:"+",label:"Nuevo Reporte"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"}],
+  conserje: [{id:"nuevoReporte",icon:"+",label:"Nuevo Reporte"},{id:"reportesConserje",icon:"≡",label:"Bitácora"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
 };
 
 const ESTADOS_REP = ["Pendiente","En revisión","Aprobado","Rechazado"];
@@ -403,6 +403,8 @@ export default function App() {
   const [loginError,setLoginError] = useState("");
   const [formOrden,setFormOrden]   = useState({tipo:TIPOS[0],ph:PHS[0],ubicacion:"",fecha:"",notas:"",asignadoA:""});
   const [formRep,setFormRep]       = useState({observacion:"",novedad:false,foto:null,area:AREAS_EDIFICIO[0],urgencia:"Normal"});
+  const [novedadesHora,setNovedadesHora] = useState([]);
+  const [nuevaNovedad,setNuevaNovedad]   = useState({hora:"",texto:""});
   const [formRepIng,setFormRepIng] = useState({tipo:TIPOS_REP_ING[0],ph:PHS[0],descripcion:"",hallazgos:"",recomendaciones:"",accionesTomadas:"",estado:"Pendiente",fotos:[],materiales:[]});
   const [conserjes,setConserjes]   = useState(() => lsGet("dcs_conserjes", USUARIOS.filter(u=>u.rol==="conserje")));
   // Sistema de mensajería
@@ -835,7 +837,7 @@ export default function App() {
     }
   }
   function crearReporte(){
-    if(!formRep.observacion) return addToast("Escribe las novedades del turno.","warning");
+    if(!formRep.observacion && novedadesHora.length===0) return addToast("Escribe al menos una novedad del turno.","warning");
     const huboInc = formRep.huboIncidente==="Hubo incidente";
     const areaFinal = huboInc ? (formRep.area==="Otro"?(formRep.areaOtro?.trim()||"Otro"):formRep.area) : "";
     if(huboInc && formRep.area==="Otro" && !formRep.areaOtro?.trim()) return addToast("Escribe el área específica del incidente.","warning");
@@ -845,6 +847,7 @@ export default function App() {
       hora:new Date().toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"}),
       turno:formRep.turno||"☀️ Tarde",
       observacion:formRep.observacion,
+      novedadesHora:novedadesHora,
       huboIncidente:huboInc,
       novedad:huboInc, // compatibility field used throughout the UI
       area:areaFinal,
@@ -857,6 +860,7 @@ export default function App() {
     else if(huboInc && r.urgencia==="Urgente") pushNotif(`⚠️ Incidente urgente en ${usuario.ph}`,"⚠️");
     else if(huboInc) pushNotif(`📋 Incidente reportado en ${usuario.ph}`,"📋");
     setFormRep({observacion:"",huboIncidente:"Sin incidente",foto:null,area:AREAS_EDIFICIO[0],urgencia:"Normal",areaOtro:"",turno:"☀️ Tarde",descripcionIncidente:""});
+    setNovedadesHora([]);setNuevaNovedad({hora:"",texto:""});
     addToast(huboInc&&r.urgencia==="Emergencia"?"🚨 Emergencia enviada":huboInc?"Reporte con incidente enviado":"Reporte de turno enviado");
     navTo("reportesConserje");
     // Sync a Supabase
@@ -1135,7 +1139,7 @@ export default function App() {
 
     const filaOrden = o => {
       const tec = TECNICOS.find(t=>t.id===o.asignadoA);
-      const colEst = {Pendiente:"#F97316",["En proceso"]:"#3B82F6",Resuelto:"#8B5CF6",Cerrado:"#22C55E"}[o.estado]||"#6b7280";
+      const colEst = {Pendiente:"#F97316",["En proceso"]:"#3B82F6",Resuelto:"#16A34A",Cerrado:"#22C55E"}[o.estado]||"#6b7280";
       return `<tr>
         <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:11px;color:#374151">${o.fecha||"—"}</td>
         <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:11px;font-weight:600;color:#111">${o.ph}</td>
@@ -1276,7 +1280,7 @@ export default function App() {
   <!-- REPORTES CONSERJE -->
   <div class="sec-header" style="margin-top:36px">
     <div class="sec-bar" style="background:#7C3AED"></div>
-    <div class="sec-title">◉ Reportes de Conserjes</div>
+    <div class="sec-title">◉ Bitácora del Conserje</div>
     <div class="sec-count">${reps.length} registros · ${reps.filter(r=>r.novedad).length} novedades</div>
   </div>
   <table>
@@ -1641,7 +1645,7 @@ export default function App() {
 
   function navTo(id){lsSet("dcs_vista",id);setVista(id);setSelOrden(null);setSelReporte(null);setSelInc(null);setPhFiltro("Todos");setEstado("Todos");setTipo("Todos");setTecFiltro("Todos");setFechaDesde("");setFechaHasta("");setFiltrosRep({urgencia:"Todos",fecha:""});}
 
-  const vistaLabel={dashboard:"Dashboard",phs:"Proyectos PH",ordenes:"Órdenes de Trabajo",misOrdenes:"Mis Órdenes",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Mis Reportes" : "Reportes de Conserjes",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual"};
+  const vistaLabel={dashboard:"Dashboard",phs:"PHs",ordenes:"Órdenes de Trabajo",misOrdenes:"Asignaciones",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Bitácora del Conserje" : "Bitácora del Conserje",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual"};
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
 
   // ── LOADING DB ─────────────────────────────────────────────────────────────
@@ -2380,7 +2384,7 @@ export default function App() {
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:10,marginBottom:14}}>
                     <div>
-                      <label style={s.label}>Proyecto PH</label>
+                      <label style={s.label}>PH</label>
                       <select value={rGenPH} onChange={e=>setRGenPH(e.target.value)} style={s.select}>
                         <option value="Todos">Todos los PH</option>
                         {PHS.map(p=><option key={p}>{p}</option>)}
@@ -2986,23 +2990,25 @@ export default function App() {
                     <button
                       onClick={()=>{
                         if(!fotos[selOrden.id]?.resuelto){addToast("Sube una foto del trabajo antes de finalizar","warning");return;}
-                        actualizarOrden(selOrden.id,{estado:"En revisión"},`Trabajo finalizado — enviado a revisión`);
-                        pushNotif(`✅ Trabajo finalizado por ${usuario.nombre} — ${selOrden.ph||""}. Pendiente revisión.`,"📋");
+                        actualizarOrden(selOrden.id,{estado:"Resuelto"},`Trabajo finalizado por ${usuario.nombre}`);
+                        pushNotif(`✅ Trabajo resuelto por ${usuario.nombre} — ${selOrden.ph||""}. Pendiente aprobación.`,"✅");
+                        addToast("¡Trabajo marcado como Resuelto! ✅","success");
                       }}
                       style={{
-                        padding:"8px 20px",borderRadius:6,fontSize:12,fontWeight:700,
+                        padding:"12px 24px",borderRadius:8,fontSize:13,fontWeight:700,
                         fontFamily:"'IBM Plex Sans',sans-serif",
                         border:"none",
                         background:"linear-gradient(135deg,#16a34a,#15803d)",
                         color:"#fff",cursor:"pointer",
-                        boxShadow:"0 2px 8px rgba(22,163,74,0.35)",
+                        boxShadow:"0 3px 12px rgba(22,163,74,0.4)",
+                        width:"100%",letterSpacing:".3px",
                       }}
-                    >✅ Marcar como Finalizado</button>
+                    >✅ Trabajo Finalizado</button>
                   </div>
                 </div>
               )}
               {/* Si ya está en revisión o cerrado, técnico ve estado */}
-              {usuario.rol==="tecnico" && (selOrden.estado==="En revisión"||selOrden.estado==="Cerrado") && (
+              {usuario.rol==="tecnico" && (selOrden.estado==="Resuelto"||selOrden.estado==="En revisión"||selOrden.estado==="Cerrado") && (
                 <div style={{...s.card,background:selOrden.estado==="Cerrado"?T.successMuted:T.accentMuted,border:`1px solid ${selOrden.estado==="Cerrado"?T.successBase:T.accentBorder}`}}>
                   <div style={{display:"flex",alignItems:"center",gap:10}}>
                     <span style={{fontSize:22}}>{selOrden.estado==="Cerrado"?"✅":"⏳"}</span>
@@ -3265,10 +3271,57 @@ export default function App() {
                   📝 Novedades del turno
                 </div>
 
+                {/* Anotador de novedades por hora */}
+                <div style={{marginBottom:16}}>
+                  <div style={{fontSize:11,fontWeight:600,color:T.textSecondary,marginBottom:8}}>📋 Registro de novedades por hora</div>
+                  {/* Lista de novedades agregadas */}
+                  {novedadesHora.length>0 && (
+                    <div style={{background:T.surfaceSecond,borderRadius:8,padding:10,marginBottom:10,maxHeight:180,overflowY:"auto"}}>
+                      {novedadesHora.map((n,i)=>(
+                        <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 0",borderBottom:i<novedadesHora.length-1?`1px solid ${T.borderSubtle}`:"none"}}>
+                          <span style={{fontSize:11,fontWeight:700,color:T.accentBase,flexShrink:0,background:T.accentMuted,padding:"2px 6px",borderRadius:4}}>{n.hora}</span>
+                          <span style={{fontSize:12,color:T.textPrimary,flex:1}}>{n.texto}</span>
+                          <button onClick={()=>setNovedadesHora(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:T.textTertiary}}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Agregar nueva novedad */}
+                  <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                    <input
+                      type="time"
+                      value={nuevaNovedad.hora}
+                      onChange={e=>setNuevaNovedad(p=>({...p,hora:e.target.value}))}
+                      style={{...s.input,width:90,flexShrink:0}}
+                    />
+                    <input
+                      value={nuevaNovedad.texto}
+                      onChange={e=>setNuevaNovedad(p=>({...p,texto:e.target.value}))}
+                      placeholder="Describe la novedad de esta hora..."
+                      style={{...s.input,flex:1}}
+                      onKeyDown={e=>{
+                        if(e.key==="Enter"&&nuevaNovedad.hora&&nuevaNovedad.texto.trim()){
+                          setNovedadesHora(p=>[...p,{hora:nuevaNovedad.hora,texto:nuevaNovedad.texto.trim()}]);
+                          setNuevaNovedad({hora:"",texto:""});
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={()=>{
+                        if(!nuevaNovedad.hora||!nuevaNovedad.texto.trim()) return;
+                        setNovedadesHora(p=>[...p,{hora:nuevaNovedad.hora,texto:nuevaNovedad.texto.trim()}]);
+                        setNuevaNovedad({hora:"",texto:""});
+                      }}
+                      style={{...s.btnPrimary,padding:"8px 12px",fontSize:13,flexShrink:0}}
+                    >+ Agregar</button>
+                  </div>
+                  <div style={{fontSize:10,color:T.textTertiary,marginTop:4}}>Presiona Enter o el botón para agregar cada novedad</div>
+                </div>
+
                 {/* Descripción libre con micrófono */}
                 <div style={{marginBottom:16}}>
                   <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-                    <label style={{...s.label,marginBottom:0}}>¿Qué ocurrió? *</label>
+                    <label style={{...s.label,marginBottom:0}}>Resumen general del turno *</label>
                     {(()=>{
                       const escuchando = formRep._escuchando||false;
                       const soportado  = typeof window!=="undefined"&&("SpeechRecognition" in window||"webkitSpeechRecognition" in window);
@@ -3479,7 +3532,7 @@ export default function App() {
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
                   <div>
                     <div style={{fontSize:14,fontWeight:700,color:T.textPrimary}}>
-                      {usuario.rol==="conserje" ? `Mis Reportes — ${usuario.ph}` : "Reportes de Conserjes"}
+                      {usuario.rol==="conserje" ? `Bitácora — ${usuario.ph}` : "Bitácora del Conserje"}
                     </div>
                     <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>
                       {misReportes.length} reporte{misReportes.length!==1?"s":""} en total
@@ -3623,7 +3676,19 @@ export default function App() {
               {/* Novedades del turno */}
               <div style={s.card}>
                 <div style={{...s.secTitle,marginBottom:10}}>📝 Novedades del turno{selReporte.turno && <span style={{fontWeight:400,fontSize:11,color:T.textTertiary,marginLeft:8}}>{selReporte.turno}</span>}</div>
-                <div style={{fontSize:13,color:T.textPrimary,lineHeight:1.8}}>{selReporte.observacion}</div>
+                {/* Novedades por hora */}
+                {selReporte.novedadesHora?.length>0 && (
+                  <div style={{marginBottom:12}}>
+                    <div style={{fontSize:11,fontWeight:600,color:T.textTertiary,marginBottom:6,textTransform:"uppercase",letterSpacing:".6px"}}>Registro por hora</div>
+                    {selReporte.novedadesHora.map((n,i)=>(
+                      <div key={i} style={{display:"flex",gap:8,padding:"6px 0",borderBottom:i<selReporte.novedadesHora.length-1?`1px solid ${T.borderSubtle}`:"none"}}>
+                        <span style={{fontSize:11,fontWeight:700,color:T.accentBase,background:T.accentMuted,padding:"2px 7px",borderRadius:4,flexShrink:0}}>{n.hora}</span>
+                        <span style={{fontSize:12,color:T.textPrimary}}>{n.texto}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selReporte.observacion && <div style={{fontSize:13,color:T.textPrimary,lineHeight:1.8,borderTop:selReporte.novedadesHora?.length>0?`1px solid ${T.borderSubtle}`:"none",paddingTop:selReporte.novedadesHora?.length>0?10:0}}><span style={{fontSize:11,fontWeight:600,color:T.textTertiary,display:"block",marginBottom:4}}>RESUMEN GENERAL</span>{selReporte.observacion}</div>}
               </div>
 
               {/* Incidente — solo si hubo */}
@@ -3846,7 +3911,7 @@ export default function App() {
                     </select>
                   </div>
                   <div>
-                    <label style={s.label}>Proyecto PH</label>
+                    <label style={s.label}>PH</label>
                     <select value={formRepIng.ph} onChange={e=>setFormRepIng({...formRepIng,ph:e.target.value})} style={s.select}>
                       {PHS.map(p=><option key={p}>{p}</option>)}
                     </select>
@@ -4984,7 +5049,7 @@ export default function App() {
 
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
                     <div>
-                      <label style={s.label}>Proyecto PH</label>
+                      <label style={s.label}>PH</label>
                       <select value={formBloque.ph} onChange={e=>setFormBloque(p=>({...p,ph:e.target.value}))} style={s.select}>
                         {PHS.map(p=><option key={p}>{p}</option>)}
                       </select>
@@ -5068,7 +5133,7 @@ export default function App() {
                               <div style={{padding:"14px 16px",background:T.surfacePrimary,borderTop:`1px solid ${T.borderDefault}`}}>
                                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
                                   <div>
-                                    <label style={s.label}>Proyecto PH</label>
+                                    <label style={s.label}>PH</label>
                                     <select value={b.ph} onChange={e=>updateBloque("ph",e.target.value)} style={s.select}>
                                       {PHS.map(p=><option key={p}>{p}</option>)}
                                     </select>
