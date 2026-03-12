@@ -739,6 +739,18 @@ export default function App() {
     };
   },[searchQ,ordenes]);
 
+  function abrirOrden(o){
+    setSelOrden(o);
+    setVista("detalle");
+    // Cargar fotos desde Supabase si existen
+    if(o.foto_dano||o.foto_resuelta){
+      setFotos(p=>({...p,[o.id]:{
+        ...p[o.id],
+        ...(o.foto_dano?{dano:o.foto_dano}:{}),
+        ...(o.foto_resuelta?{resuelto:o.foto_resuelta}:{})
+      }}));
+    }
+  }
   function actualizarOrden(id,cambios,histMsg){
     const now=new Date().toLocaleString("es",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
     const entry=histMsg?[{fecha:now,usuario:usuario.nombre,accion:histMsg}]:[];
@@ -764,14 +776,45 @@ export default function App() {
       if(Object.keys(dbCambios).length) supa.patch("ordenes", id, dbCambios).catch(()=>{});
     }
   }
-  function subirFoto(oid,tipo,file){
+  async function subirFoto(oid,tipo,file){
     if(!file) return;
+    addToast("Subiendo foto...","info");
+    // Guardar en localStorage como preview inmediato
     const reader = new FileReader();
     reader.onload = ev => {
       setFotos(p=>({...p,[oid]:{...p[oid],[tipo]:ev.target.result}}));
-      addToast("Foto subida");
     };
     reader.readAsDataURL(file);
+
+    // Subir a Supabase Storage
+    if(dbOnline){
+      try {
+        const ext = file.name.split(".").pop()||"jpg";
+        const path = `ordenes/${oid}/${tipo}_${Date.now()}.${ext}`;
+        const res = await fetch(`${SUPA_URL}/storage/v1/object/fotos-ordenes/${path}`,{
+          method:"POST",
+          headers:{"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":file.type,"x-upsert":"true"},
+          body:file
+        });
+        if(res.ok){
+          const publicUrl = `${SUPA_URL}/storage/v1/object/public/fotos-ordenes/${path}`;
+          // Guardar URL en la orden
+          const campo = tipo==="dano"?"foto_dano":"foto_resuelta";
+          await supa.patch("ordenes", oid, {[campo]: publicUrl}).catch(()=>{});
+          // Actualizar estado local con URL pública
+          setFotos(p=>({...p,[oid]:{...p[oid],[tipo]:publicUrl}}));
+          setOrdenes(p=>p.map(o=>o.id===oid?{...o,[campo]:publicUrl}:o));
+          if(selOrden?.id===oid) setSelOrden(p=>({...p,[campo]:publicUrl}));
+          addToast("Foto guardada en la nube ✓");
+        } else {
+          addToast("Foto guardada localmente (sin conexión a storage)","warning");
+        }
+      } catch(e){
+        addToast("Foto guardada localmente","warning");
+      }
+    } else {
+      addToast("Foto subida (modo offline)");
+    }
   }
   function crearOrden(){
     if(!formOrden.ubicacion||!formOrden.fecha)return addToast("Completa ubicación y fecha.","warning");
@@ -1957,7 +2000,7 @@ export default function App() {
                     {searchResults.ords.length>0 && <>
                       <div style={{padding:"8px 14px 4px",fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",letterSpacing:"0.7px"}}>Órdenes</div>
                       {searchResults.ords.map(o=>(
-                        <div key={o.id} style={{padding:"9px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,borderBottom:`1px solid ${T.borderSubtle}`}} onClick={()=>{setSelOrden(o);setVista("detalle");setShowSearch(false);setSearchQ("")}}>
+                        <div key={o.id} style={{padding:"9px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,borderBottom:`1px solid ${T.borderSubtle}`}} onClick={()=>{abrirOrden(o);setShowSearch(false);setSearchQ("")}}>
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{fontSize:12,fontWeight:600,color:T.textPrimary}}>{o.ph}</div>
                             <div style={{fontSize:11,color:T.textSecondary}}>{o.tipo}</div>
@@ -2235,7 +2278,7 @@ export default function App() {
                     Pendientes de aprobación
                   </div>
                   {ordenes.filter(o=>o.estado==="Resuelto"&&!o.aprobado).map(o=>(
-                    <div key={o.id} onClick={()=>{setSelOrden(o);setVista("detalle")}} style={{
+                    <div key={o.id} onClick={()=>{abrirOrden(o)}} style={{
                       display:"flex",alignItems:"center",gap:14,
                       padding:"10px 12px",
                       background:T.accentMuted,
@@ -2263,7 +2306,7 @@ export default function App() {
                   </thead>
                   <tbody>
                     {ordenes.slice(0,5).map(o=>(
-                      <tr key={o.id} style={{cursor:"pointer"}} onClick={()=>{setSelOrden(o);setVista("detalle")}}>
+                      <tr key={o.id} style={{cursor:"pointer"}} onClick={()=>{abrirOrden(o)}}>
                         <td style={s.td}>
                           <div style={{fontSize:12,fontWeight:600,color:T.textPrimary}}>{o.ph}</div>
                           <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{o.ubicacion}</div>
@@ -2480,7 +2523,7 @@ export default function App() {
                   {ordenesFiltradas.map(o=>{
                     const tec=TECNICOS.find(t2=>t2.id===o.asignadoA);
                     return (
-                      <div key={o.id} onClick={()=>{setSelOrden(o);setVista("detalle")}}
+                      <div key={o.id} onClick={()=>{abrirOrden(o)}}
                         style={{background:T.surfacePrimary,borderRadius:8,padding:"12px 14px",
                           border:`1px solid ${T.borderDefault}`,cursor:"pointer",
                           display:"flex",flexDirection:"column",gap:6}}>
@@ -2511,7 +2554,7 @@ export default function App() {
                       {ordenesFiltradas.map(o=>{
                         const tec=TECNICOS.find(t2=>t2.id===o.asignadoA);
                         return (
-                          <tr key={o.id} style={{cursor:"pointer"}} onClick={()=>{setSelOrden(o);setVista("detalle")}}>
+                          <tr key={o.id} style={{cursor:"pointer"}} onClick={()=>{abrirOrden(o)}}>
                             <td style={s.td}>
                               <div style={{fontSize:12,fontWeight:600,color:T.textPrimary}}>{o.ph}</div>
                               <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{o.ubicacion}</div>
@@ -3998,7 +4041,7 @@ export default function App() {
                   <div style={{textAlign:"center",padding:40,color:T.textTertiary,fontSize:12}}>No tienes órdenes asignadas.</div>
                 )}
                 {misOrdenes.map(o=>(
-                  <div key={o.id} onClick={()=>{setSelOrden(o);setVista("detalle")}}
+                  <div key={o.id} onClick={()=>{abrirOrden(o)}}
                     style={{background:T.surfacePrimary,borderRadius:8,padding:"12px 14px",
                       border:`1px solid ${T.borderDefault}`,cursor:"pointer",
                       display:"flex",flexDirection:"column",gap:6}}>
