@@ -116,9 +116,9 @@ const initRepIng = [
 ];
 
 const MENU = {
-  admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"nueva",icon:"+",label:"Nueva Orden"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"misDiarios",icon:"📚",label:"Diarios de Campo"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"}],
+  admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"nueva",icon:"+",label:"Nueva Orden"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"misDiarios",icon:"📚",label:"Diarios de Campo"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
   tecnico:  [{id:"misOrdenes",icon:"≡",label:"Asignaciones"},{id:"reportesIng",icon:"◈",label:"Reportes Ing."},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
-  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora"},{id:"reporteIngeniera",icon:"◈",label:"Mis Reportes"},{id:"nuevoReporteIngeniera",icon:"+",label:"Nuevo Reporte"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"}],
+  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora"},{id:"reporteIngeniera",icon:"◈",label:"Mis Reportes"},{id:"nuevoReporteIngeniera",icon:"+",label:"Nuevo Reporte"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
   conserje: [{id:"nuevoReporte",icon:"+",label:"Nuevo Reporte"},{id:"reportesConserje",icon:"≡",label:"Bitácora"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
 };
 
@@ -618,6 +618,8 @@ export default function App() {
     comentarioIng: r.comentario_ing||"",
     firmaDigital: r.firma_digital||null,
     estadoRep: r.estado_rep||"Pendiente",
+    novedadesHora: r.novedades_hora||[],
+    turno: r.turno||"",
   });
   const dbToRepIng = (r) => ({
     id: r.id, tipo: r.tipo, ph: r.ph, fecha: r.fecha||"",
@@ -869,7 +871,8 @@ export default function App() {
         ph:r.ph, conserje:r.conserje, fecha:r.fecha, hora:r.hora,
         area:r.area||"", urgencia:r.urgencia, observacion:r.observacion,
         novedad:r.novedad, hubo_incidente:r.huboIncidente,
-        foto:r.foto||null, estado_rep:"Pendiente"
+        foto:r.foto||null, estado_rep:"Pendiente",
+        novedades_hora: r.novedadesHora||[]
       }).catch(()=>{});
     }
   }
@@ -912,6 +915,8 @@ export default function App() {
       if(cambios.comentarioIng!==undefined) dbC.comentario_ing = cambios.comentarioIng;
       if(cambios.firmaDigital) dbC.firma_digital = cambios.firmaDigital;
       if(cambios.estadoRep) dbC.estado_rep = cambios.estadoRep;
+    if(cambios.atendido !== undefined) dbC.atendido = cambios.atendido;
+    if(cambios.fechaAtendido) dbC.fecha_atendido = cambios.fechaAtendido;
       if(Object.keys(dbC).length) supa.patch("reportes", id, dbC).catch(()=>{});
     }
   }
@@ -1645,7 +1650,7 @@ export default function App() {
 
   function navTo(id){lsSet("dcs_vista",id);setVista(id);setSelOrden(null);setSelReporte(null);setSelInc(null);setPhFiltro("Todos");setEstado("Todos");setTipo("Todos");setTecFiltro("Todos");setFechaDesde("");setFechaHasta("");setFiltrosRep({urgencia:"Todos",fecha:""});}
 
-  const vistaLabel={dashboard:"Dashboard",phs:"PHs",ordenes:"Órdenes de Trabajo",misOrdenes:"Asignaciones",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Bitácora del Conserje" : "Bitácora del Conserje",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual"};
+  const vistaLabel={dashboard:"Dashboard",phs:"PHs",ordenes:"Órdenes de Trabajo",misOrdenes:"Asignaciones",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Bitácora del Conserje" : "Bitácora del Conserje",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual",seguimiento:"Seguimiento"};
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
 
   // ── LOADING DB ─────────────────────────────────────────────────────────────
@@ -1883,6 +1888,12 @@ export default function App() {
                   }}>{unread}</span>
                 )}
                 {/* Badge emergencias en reportes */}
+                {m.id==="seguimiento" && (()=>{
+                  const cnt = reportes.filter(r=>r.estadoRep==="Requiere seguimiento"&&!r.atendido).length
+                            + ordenes.filter(o=>o.estadoSeguimiento==="Requiere seguimiento"&&!o.atendido).length;
+                  if(!cnt) return null;
+                  return <span style={{background:T.warningBase,color:"#fff",fontSize:9,fontWeight:800,padding:"1px 5px",borderRadius:8,marginLeft:"auto",minWidth:16,textAlign:"center"}}>{cnt}</span>;
+                })()}
                 {m.id==="reportesConserje" && (()=>{
                   const emerg = reportes.filter(r=>r.urgencia==="Emergencia"&&!r.aprobadoPorIng).length;
                   return emerg>0 ? (
@@ -3596,34 +3607,69 @@ export default function App() {
                       transition:"box-shadow .15s",
                     }}>
 
-                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10}}>
+                    {/* Header tarjeta: título grande + badge estado */}
+                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10,marginBottom:8}}>
                       <div style={{flex:1,minWidth:0}}>
-                        {/* PH + fecha */}
-                        <div style={{fontSize:13,fontWeight:700,color:T.textPrimary,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.ph}</div>
-                        <div style={{fontSize:11,color:T.textTertiary,marginTop:2,fontFamily:"'IBM Plex Mono',monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                          {usuario.rol!=="conserje" && `${r.conserje} · `}{r.fecha}{r.hora?` ${fmtHora(r.hora)}`:""}{r.turno?` · ${r.turno}`:""}
-                        </div>
-                        {/* Observación resumida */}
-                        <div style={{fontSize:12,color:T.textSecondary,lineHeight:1.6,marginTop:6}}>
-                          {r.observacion?.slice(0,120)}{r.observacion?.length>120?"…":""}
+                        <div style={{fontSize:15,fontWeight:800,color:T.textPrimary,marginBottom:2}}>📋 Reporte Conserje</div>
+                        <div style={{fontSize:12,fontWeight:600,color:T.textSecondary,fontFamily:"'IBM Plex Mono',monospace"}}>
+                          {usuario.rol!=="conserje" && <span style={{fontWeight:700,color:T.textPrimary}}>{r.conserje} · </span>}
+                          {r.fecha}{r.hora?` · ${fmtHora(r.hora)}`:""}{r.turno?` · ${r.turno}`:""}
                         </div>
                       </div>
+                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
+                        <span style={{background:urgCfg.bg,color:urgCfg.text,border:`1px solid ${urgCfg.border}55`,fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:4}}>
+                          {urgCfg.icon} {r.urgencia||"Normal"}
+                        </span>
+                        {r.estadoRep && r.estadoRep!=="Pendiente" && (
+                          <span style={{
+                            background:r.estadoRep==="Revisado"?T.successMuted:r.estadoRep==="Requiere seguimiento"?T.warningMuted:T.surfaceSecond,
+                            color:r.estadoRep==="Revisado"?T.successText:r.estadoRep==="Requiere seguimiento"?T.warningText:T.textTertiary,
+                            fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:4
+                          }}>{r.estadoRep==="Revisado"?"✅ Revisado":"⚠️ Seguimiento"}</span>
+                        )}
+                      </div>
+                    </div>
 
-                      {/* Columna derecha — badges + thumbnail */}
-                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
-                        <div style={{display:"flex",gap:5,flexWrap:"wrap",justifyContent:"flex-end"}}>
-                          {r.area && <span style={{background:T.surfaceThird,color:T.textSecondary,border:`1px solid ${T.borderDefault}`,fontSize:10,padding:"2px 7px",borderRadius:4}}>📍 {r.area}</span>}
-                          {r.huboIncidente && <span style={{background:T.dangerMuted,color:T.dangerText,border:`1px solid ${T.dangerBase}33`,fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:4}}>⚠️ Incidente</span>}
-                          <span style={{background:urgCfg.bg,color:urgCfg.text,border:`1px solid ${urgCfg.border}33`,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:4}}>
-                            {urgCfg.icon} {r.urgencia||"Normal"}
-                          </span>
-                          {r.aprobadoPorIng && <span style={{background:T.successMuted,color:T.successText,fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:4}}>✓ Aprobado</span>}
-                          {r.comentarioIng && <span style={{background:T.accentMuted,color:T.accentText,fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:4}}>💬 Comentario</span>}
-                        </div>
-                        {/* Thumbnail pequeño si tiene foto */}
-                        {r.foto && <img src={r.foto} alt="" style={{width:56,height:44,objectFit:"cover",borderRadius:4,border:`1px solid ${T.borderDefault}`,marginTop:2}}/>}
-                        <span style={{color:T.textTertiary,fontSize:14,marginTop:2}}>›</span>
+                    {/* Novedades del turno */}
+                    {(r.novedadesHora?.length>0||r.observacion) && (
+                      <div style={{marginBottom:8}}>
+                        <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",letterSpacing:".6px",marginBottom:4}}>Novedades del turno</div>
+                        {r.novedadesHora?.length>0 && (
+                          <div style={{display:"flex",flexDirection:"column",gap:3,marginBottom:4}}>
+                            {r.novedadesHora.slice(0,3).map((n,i)=>(
+                              <div key={i} style={{display:"flex",gap:6,fontSize:11}}>
+                                <span style={{fontWeight:700,color:T.accentBase,background:T.accentMuted,padding:"1px 5px",borderRadius:3,flexShrink:0}}>{fmtHora(n.hora)}</span>
+                                <span style={{color:T.textSecondary}}>{n.texto?.slice(0,80)}{n.texto?.length>80?"…":""}</span>
+                              </div>
+                            ))}
+                            {r.novedadesHora.length>3 && <div style={{fontSize:10,color:T.textTertiary}}>+{r.novedadesHora.length-3} más...</div>}
+                          </div>
+                        )}
+                        {r.observacion && (
+                          <div style={{fontSize:12,color:T.textSecondary,lineHeight:1.5}}>
+                            <span style={{fontWeight:600,color:T.textTertiary}}>Resumen: </span>
+                            {r.observacion.slice(0,100)}{r.observacion.length>100?"…":""}
+                          </div>
+                        )}
                       </div>
+                    )}
+
+                    {/* Incidente — solo si hubo */}
+                    {r.huboIncidente && (
+                      <div style={{background:T.dangerMuted,border:`1px solid ${T.dangerBase}33`,borderRadius:6,padding:"6px 10px",marginBottom:6,display:"flex",alignItems:"center",gap:6}}>
+                        <span style={{fontSize:12}}>⚠️</span>
+                        <span style={{fontSize:11,fontWeight:700,color:T.dangerText}}>Incidente reportado</span>
+                        {r.area && <span style={{fontSize:10,color:T.dangerText,opacity:0.8}}>· {r.area}</span>}
+                      </div>
+                    )}
+
+                    {/* Foto thumbnail + flecha */}
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                      {r.foto
+                        ? <img src={r.foto} alt="" style={{width:64,height:48,objectFit:"cover",borderRadius:4,border:`1px solid ${T.borderDefault}`}}/>
+                        : <div/>
+                      }
+                      <span style={{color:T.textTertiary,fontSize:16}}>›</span>
                     </div>
                   </div>
                 );
@@ -5448,6 +5494,140 @@ export default function App() {
           })()}
 
           {/* ── REPORTE MENSUAL ── */}
+          {/* ── SEGUIMIENTO ── */}
+          {vista==="seguimiento" && (usuario?.rol==="admin"||usuario?.rol==="ingeniera") && (()=>{
+            const itemsSeg = [
+              ...reportes.filter(r=>r.estadoRep==="Requiere seguimiento"),
+              ...ordenes.filter(o=>o.estadoSeguimiento==="Requiere seguimiento"),
+            ];
+            const pendientes = itemsSeg.filter(i=>!i.atendido);
+            const atendidos  = itemsSeg.filter(i=>i.atendido);
+
+            return (
+              <div style={{display:"flex",flexDirection:"column",gap:12,maxWidth:680}}>
+
+                {/* Header */}
+                <div style={{...s.card,background:`linear-gradient(135deg,${T.warningBase}10,${T.surfacePrimary})`,border:`1px solid ${T.warningBase}44`}}>
+                  <div style={{fontSize:15,fontWeight:800,color:T.textPrimary,marginBottom:4}}>⚠️ Seguimiento</div>
+                  <div style={{fontSize:12,color:T.textTertiary}}>
+                    {pendientes.length} pendiente{pendientes.length!==1?"s":""} · {atendidos.length} atendido{atendidos.length!==1?"s":""}
+                  </div>
+                </div>
+
+                {/* Lista vacía */}
+                {pendientes.length===0 && (
+                  <div style={{textAlign:"center",padding:"48px 0",color:T.textTertiary,fontSize:13}}>
+                    <div style={{fontSize:32,marginBottom:10}}>✅</div>
+                    Sin pendientes de seguimiento
+                  </div>
+                )}
+
+                {/* Pendientes */}
+                {pendientes.length>0 && (
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    <div style={{fontSize:11,fontWeight:700,color:T.warningText,textTransform:"uppercase",letterSpacing:".7px",padding:"0 4px"}}>
+                      PENDIENTES ({pendientes.length})
+                    </div>
+                    {pendientes.map((item,idx)=>{
+                      const esReporte = !!item.conserje;
+                      return (
+                        <div key={item.id||idx} style={{...s.card,border:`1px solid ${T.warningBase}44`,borderLeft:`4px solid ${T.warningBase}`}}>
+                          {/* Tipo + nombre */}
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                            <div>
+                              <span style={{fontSize:10,fontWeight:700,background:T.warningMuted,color:T.warningText,padding:"2px 7px",borderRadius:4,marginRight:6}}>
+                                {esReporte?"📋 Bitácora Conserje":"🔧 Orden"}
+                              </span>
+                              <span style={{fontSize:13,fontWeight:700,color:T.textPrimary}}>
+                                {esReporte?item.conserje:item.tipo}
+                              </span>
+                            </div>
+                            <span style={{fontSize:11,color:T.textTertiary,fontFamily:"'IBM Plex Mono',monospace"}}>{item.fecha}</span>
+                          </div>
+
+                          {/* PH */}
+                          <div style={{fontSize:12,color:T.textSecondary,marginBottom:6}}>📍 {item.ph}</div>
+
+                          {/* Contenido */}
+                          {esReporte && item.observacion && (
+                            <div style={{fontSize:12,color:T.textSecondary,lineHeight:1.5,marginBottom:8,background:T.surfaceSecond,padding:"6px 10px",borderRadius:4}}>
+                              {item.observacion.slice(0,150)}{item.observacion.length>150?"…":""}
+                            </div>
+                          )}
+                          {!esReporte && item.notas && (
+                            <div style={{fontSize:12,color:T.textSecondary,lineHeight:1.5,marginBottom:8,background:T.surfaceSecond,padding:"6px 10px",borderRadius:4}}>
+                              {item.notas.slice(0,150)}{item.notas.length>150?"…":""}
+                            </div>
+                          )}
+
+                          {/* Foto si tiene */}
+                          {esReporte && item.foto && (
+                            <img src={item.foto} alt="" style={{width:"100%",maxHeight:160,objectFit:"cover",borderRadius:6,border:`1px solid ${T.borderDefault}`,marginBottom:8}}/>
+                          )}
+
+                          {/* Comentario ing */}
+                          {item.comentarioIng && (
+                            <div style={{fontSize:11,color:T.accentText,background:T.accentMuted,border:`1px solid ${T.accentBorder}`,borderRadius:4,padding:"5px 8px",marginBottom:8}}>
+                              💬 {item.comentarioIng}
+                            </div>
+                          )}
+
+                          {/* Botón Atendido */}
+                          <button
+                            onClick={e=>{
+                              e.stopPropagation();
+                              if(esReporte){
+                                actualizarReporte(item.id,{atendido:true,estadoRep:"Atendido",fechaAtendido:new Date().toLocaleString("es",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})});
+                              } else {
+                                actualizarOrden(item.id,{atendido:true,estadoSeguimiento:"Atendido"},`Seguimiento atendido por ${usuario.nombre}`);
+                              }
+                              addToast("Marcado como Atendido ✅","success");
+                            }}
+                            style={{
+                              width:"100%",padding:"10px 0",borderRadius:6,fontSize:12,fontWeight:700,
+                              fontFamily:"'IBM Plex Sans',sans-serif",border:"none",cursor:"pointer",
+                              background:`linear-gradient(135deg,${T.successBase},#15803d)`,
+                              color:"#fff",boxShadow:`0 2px 8px ${T.successBase}44`,
+                            }}
+                          >✅ Marcar como Atendido</button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Atendidos */}
+                {atendidos.length>0 && (
+                  <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                    <div style={{fontSize:11,fontWeight:700,color:T.successText,textTransform:"uppercase",letterSpacing:".7px",padding:"0 4px",marginTop:8}}>
+                      ATENDIDOS ({atendidos.length})
+                    </div>
+                    {atendidos.map((item,idx)=>{
+                      const esReporte = !!item.conserje;
+                      return (
+                        <div key={item.id||idx} style={{...s.card,border:`1px solid ${T.successBase}33`,borderLeft:`4px solid ${T.successBase}`,opacity:0.85}}>
+                          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                            <div>
+                              <span style={{fontSize:10,fontWeight:700,background:T.successMuted,color:T.successText,padding:"2px 7px",borderRadius:4,marginRight:6}}>
+                                ✅ Atendido
+                              </span>
+                              <span style={{fontSize:13,fontWeight:600,color:T.textPrimary}}>
+                                {esReporte?item.conserje:item.tipo}
+                              </span>
+                            </div>
+                            <span style={{fontSize:11,color:T.textTertiary}}>{item.ph}</span>
+                          </div>
+                          {item.fechaAtendido && <div style={{fontSize:10,color:T.textTertiary,marginTop:4}}>{item.fechaAtendido}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+              </div>
+            );
+          })()}
+
           {vista==="reporteMensual" && (usuario?.rol==="admin"||usuario?.rol==="ingeniera") && (()=>{
             const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
