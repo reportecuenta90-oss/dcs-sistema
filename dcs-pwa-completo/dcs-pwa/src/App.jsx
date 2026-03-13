@@ -1090,9 +1090,14 @@ export default function App() {
 </body>
 </html>`;
 
-    const w = window.open("","_blank");
-    w.document.write(html);
-    w.document.close();
+    const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Bitacora-${rep.ph||"reporte"}-${rep.fecha||"sin-fecha"}.html`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    addToast("📄 Descargado","success");
   }
   function crearConserje(){
     if(!formCons.nombre||!formCons.pass||!formCons.correo)return addToast("Completa todos los campos.","warning");
@@ -1662,6 +1667,7 @@ export default function App() {
 </body>
 </html>`;
 
+    // Descarga directa sin popup
     const w = window.open("","_blank");
     w.document.write(html);
     w.document.close();
@@ -5095,8 +5101,8 @@ export default function App() {
               </div></body></html>`;
               // Abrir en ventana nueva y disparar impresión automáticamente
               const w = window.open("","_blank","width=900,height=700");
-              w.document.write(html);
-              w.document.close();
+    w.document.write(html);
+    w.document.close();
               w.onload = () => { w.focus(); w.print(); };
               addToast("Se abrió la vista de impresión — elige 'Guardar como PDF'");
             };
@@ -5966,68 +5972,26 @@ export default function App() {
 <script>window.onload=function(){window.print();}</script>
 </body></html>`;
 
-                // Generar PDF usando jsPDF + html2canvas via CDN
-                const loadScript = (src) => new Promise((res,rej)=>{
-                  if(document.querySelector(`script[src="${src}"]`)){res();return;}
-                  const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);
-                });
-
+                // Abrir en nueva ventana — el usuario guarda como PDF con Ctrl+P → Guardar como PDF
                 try {
-                  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
-                  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
-
-                  // Crear iframe oculto con el HTML
-                  const iframe = document.createElement("iframe");
-                  iframe.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:900px;height:auto;border:none;";
-                  document.body.appendChild(iframe);
-                  iframe.contentDocument.open();
-                  // Remove auto-print script from html
-                  const htmlClean = html.replace("<script>window.onload=function(){window.print();}<\/script>","");
-                  iframe.contentDocument.write(htmlClean);
-                  iframe.contentDocument.close();
-
-                  await new Promise(r=>setTimeout(r,1500));
-
-                  const {jsPDF} = window.jspdf;
-                  const pdf = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
-                  const pageWidth = pdf.internal.pageSize.getWidth();
-                  const pageHeight = pdf.internal.pageSize.getHeight();
-                  const margin = 10;
-
-                  const canvas = await window.html2canvas(iframe.contentDocument.body,{
-                    scale:2, useCORS:true, allowTaint:true,
-                    width:880, windowWidth:900,
-                  });
-
-                  document.body.removeChild(iframe);
-
-                  const imgData = canvas.toDataURL("image/jpeg",0.92);
-                  const imgWidth = pageWidth - margin*2;
-                  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                  let yPos = margin;
-                  let remaining = imgHeight;
-
-                  while(remaining > 0) {
-                    pdf.addImage(imgData,"JPEG",margin,yPos,imgWidth,imgHeight);
-                    remaining -= (pageHeight - margin*2);
-                    if(remaining > 0){
-                      pdf.addPage();
-                      yPos = margin - (imgHeight - remaining);
-                    }
+                  const w = window.open("","_blank");
+                  if(w) {
+                    w.document.write(html);
+                    w.document.close();
+                    addToast("✅ Reporte abierto — usa Ctrl+P para guardar como PDF","success");
+                  } else {
+                    // Si bloquea popups, descarga como HTML
+                    const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href=url; a.download=`Reporte-Mensual-${MESES[mesRM]}-${anioRM}.html`;
+                    document.body.appendChild(a); a.click();
+                    document.body.removeChild(a); URL.revokeObjectURL(url);
+                    addToast("📄 Descargado — abre el archivo y usa Ctrl+P para PDF","success");
                   }
-
-                  pdf.save(`Reporte-Mensual-${MESES[mesRM]}-${anioRM}.pdf`);
-                  addToast("✅ PDF descargado","success");
                 } catch(err) {
                   console.error(err);
-                  // Fallback: descarga HTML
-                  const blob = new Blob([html], {type:"text/html;charset=utf-8"});
-                  const url  = URL.createObjectURL(blob);
-                  const a    = document.createElement("a");
-                  a.href = url; a.download = `Reporte-${MESES[mesRM]}-${anioRM}.html`;
-                  document.body.appendChild(a); a.click();
-                  document.body.removeChild(a); URL.revokeObjectURL(url);
-                  addToast("PDF no disponible — descargado como HTML","warning");
+                  addToast("Error al generar reporte","error");
                 }
                 setGenerando(false);
               })(); } catch(e){ console.error(e); setGenerando(false); }
