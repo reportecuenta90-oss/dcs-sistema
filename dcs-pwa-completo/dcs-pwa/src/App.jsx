@@ -116,10 +116,10 @@ const initRepIng = [
 ];
 
 const MENU = {
-  admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"nueva",icon:"+",label:"Nueva Orden"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"misDiarios",icon:"📚",label:"Diarios de Campo"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
-  tecnico:  [{id:"misOrdenes",icon:"≡",label:"Asignaciones"},{id:"reportesIng",icon:"◈",label:"Reportes Ing."},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
-  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Órdenes"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora"},{id:"reporteIngeniera",icon:"◈",label:"Mis Reportes"},{id:"nuevoReporteIngeniera",icon:"+",label:"Nuevo Reporte"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
-  conserje: [{id:"nuevoReporte",icon:"+",label:"Nuevo Reporte"},{id:"reportesConserje",icon:"≡",label:"Bitácora"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
+  admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Asignaciones"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora de los Conserjes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
+  tecnico:  [{id:"misOrdenes",icon:"≡",label:"Asignaciones"},{id:"asignacionesTerminadas",icon:"✅",label:"Asignaciones Terminadas"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
+  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Asignaciones"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora de los Conserjes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
+  conserje: [{id:"nuevoReporte",icon:"📝",label:"Nueva Entrada"},{id:"reportesConserje",icon:"📋",label:"Bitácora"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
 };
 
 const ESTADOS_REP = ["Pendiente","En revisión","Aprobado","Rechazado"];
@@ -888,7 +888,7 @@ export default function App() {
     setRepIng(p=>[nuevo,...p]);
     setFormRepIng({tipo:TIPOS_REP_ING[0],ph:PHS[0],descripcion:"",hallazgos:"",recomendaciones:"",accionesTomadas:"",estado:"Pendiente",fotos:[]});
     addToast("Reporte creado");
-    setVista("reporteIngeniera");
+    navTo("misDiarios");
     if(dbOnline) {
       supa.post("reportes_ing",{
         tipo:nuevo.tipo, ph:nuevo.ph, fecha:nuevo.fecha,
@@ -1650,7 +1650,7 @@ export default function App() {
 
   function navTo(id){lsSet("dcs_vista",id);setVista(id);setSelOrden(null);setSelReporte(null);setSelInc(null);setPhFiltro("Todos");setEstado("Todos");setTipo("Todos");setTecFiltro("Todos");setFechaDesde("");setFechaHasta("");setFiltrosRep({urgencia:"Todos",fecha:""});}
 
-  const vistaLabel={dashboard:"Dashboard",phs:"PHs",ordenes:"Órdenes de Trabajo",misOrdenes:"Asignaciones",reportesIng:"Reportes de Ingeniería",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Bitácora del Conserje" : "Bitácora del Conserje",nuevoReporte:"Nuevo Reporte",reporteIngeniera:"Mis Reportes",nuevoReporteIngeniera:"Nuevo Reporte Técnico",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual",seguimiento:"Seguimiento"};
+  const vistaLabel={dashboard:"Dashboard",phs:"PHs",ordenes:"Órdenes de Trabajo",misOrdenes:"Asignaciones",asignacionesTerminadas:"Asignaciones Terminadas",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Bitácora" : "Bitácora de los Conserjes",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual",seguimiento:"Seguimiento"};
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
 
   // ── LOADING DB ─────────────────────────────────────────────────────────────
@@ -1856,7 +1856,7 @@ export default function App() {
         {/* Nav */}
         <nav style={{flex:1,padding:"10px 8px",display:"flex",flexDirection:"column",gap:1,overflowY:"auto"}}>
           {menu.map(m=>{
-            const active = vista===m.id||(vista==="detalle"&&m.id==="ordenes");
+            const active = vista===m.id||(vista==="detalle"&&(m.id==="ordenes"||m.id==="misOrdenes"))||(vista==="asignacionesTerminadas"&&m.id==="asignacionesTerminadas");
             return (
               <button key={m.id} onClick={()=>navTo(m.id)} style={{
                 display:"flex", alignItems:"center", gap:10,
@@ -1873,7 +1873,7 @@ export default function App() {
                 }}>{m.icon}</span>
                 {sidebarOpen && (
                   <span style={{
-                    fontSize:12, fontWeight:active?600:400,
+                    fontSize:14, fontWeight:active?700:500,
                     color:active?T.sidebarActive:T.sidebarText,
                     whiteSpace:"nowrap", flex:1,
                   }}>{m.label}</span>
@@ -3004,6 +3004,7 @@ export default function App() {
                         actualizarOrden(selOrden.id,{estado:"Resuelto"},`Trabajo finalizado por ${usuario.nombre}`);
                         pushNotif(`✅ Trabajo resuelto por ${usuario.nombre} — ${selOrden.ph||""}. Pendiente aprobación.`,"✅");
                         addToast("¡Trabajo marcado como Resuelto! ✅","success");
+                        setTimeout(()=>navTo("asignacionesTerminadas"),800);
                       }}
                       style={{
                         padding:"12px 24px",borderRadius:8,fontSize:13,fontWeight:700,
@@ -3900,412 +3901,73 @@ export default function App() {
           )}
 
           {/* ── NUEVO REPORTE INGENIERA ── */}
-          {vista==="nuevoReporteIngeniera" && usuario.rol==="ingeniera" && (
-            <div style={{maxWidth:640,display:"flex",flexDirection:"column",gap:14}}>
 
-              {/* Header */}
-              <div style={{...s.card,background:`linear-gradient(135deg,${T.accentBase}12,${T.surfacePrimary})`,border:`1px solid ${T.accentBorder}`}}>
-                <div style={{display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:44,height:44,borderRadius:"50%",background:T.accentBase,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,color:"#fff",flexShrink:0}}>◈</div>
-                  <div>
-                    <div style={{fontSize:15,fontWeight:700,color:T.textPrimary}}>Nuevo Reporte de Campo</div>
-                    <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>
-                      {usuario.nombre} · {new Date().toLocaleDateString("es",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Datos básicos */}
-              <div style={s.card}>
-                <div style={{...s.secTitle,marginBottom:16}}>📋 Información general</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
-                  <div>
-                    <label style={s.label}>Tipo de reporte</label>
-                    <select value={formRepIng.tipo} onChange={e=>setFormRepIng({...formRepIng,tipo:e.target.value})} style={s.select}>
-                      {TIPOS_REP_ING.map(t2=><option key={t2}>{t2}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={s.label}>PH</label>
-                    <select value={formRepIng.ph} onChange={e=>setFormRepIng({...formRepIng,ph:e.target.value})} style={s.select}>
-                      {PHS.map(p=><option key={p}>{p}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div style={{marginBottom:14}}>
-                  <label style={s.label}>Estado del reporte</label>
-                  <div style={{display:"flex",gap:8}}>
-                    {["Pendiente","En revisión","Aprobado","Rechazado"].map(est=>{
-                      const cfg={
-                        Pendiente:   {bg:T.warningMuted, border:T.warningBase, text:T.warningText},
-                        ["En revisión"]:{bg:T.accentMuted, border:T.accentBase, text:T.accentText},
-                        Aprobado:    {bg:T.successMuted, border:T.successBase, text:T.successText},
-                        Rechazado:   {bg:T.dangerMuted,  border:T.dangerBase,  text:T.dangerText},
-                      }[est];
-                      const active = formRepIng.estado===est;
-                      return <button key={est} onClick={()=>setFormRepIng({...formRepIng,estado:est})} style={{
-                        flex:1,padding:"8px 6px",borderRadius:6,cursor:"pointer",fontSize:11,fontWeight:active?700:500,
-                        border:`1.5px solid ${active?cfg.border:T.borderDefault}`,
-                        background:active?cfg.bg:T.surfaceSecond,
-                        color:active?cfg.text:T.textTertiary,
-                        fontFamily:"'IBM Plex Sans',sans-serif",transition:"all .15s",
-                      }}>{est}</button>;
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Descripción general */}
-              <div style={s.card}>
-                <div style={{...s.secTitle,marginBottom:12}}>📝 Descripción general *</div>
-                <textarea
-                  value={formRepIng.descripcion}
-                  onChange={e=>setFormRepIng({...formRepIng,descripcion:e.target.value})}
-                  rows={4}
-                  placeholder="Describe lo que sucedió hoy, el contexto de la visita, el trabajo realizado..."
-                  style={s.textarea}
-                />
-              </div>
-
-              {/* Hallazgos */}
-              <div style={s.card}>
-                <div style={{...s.secTitle,marginBottom:12}}>🔍 Hallazgos encontrados</div>
-                <textarea
-                  value={formRepIng.hallazgos}
-                  onChange={e=>setFormRepIng({...formRepIng,hallazgos:e.target.value})}
-                  rows={4}
-                  placeholder="Lista los hallazgos, problemas detectados, anomalías observadas..."
-                  style={s.textarea}
-                />
-              </div>
-
-              {/* Acciones tomadas */}
-              <div style={s.card}>
-                <div style={{...s.secTitle,marginBottom:12}}>⚙ Acciones tomadas</div>
-                <textarea
-                  value={formRepIng.accionesTomadas}
-                  onChange={e=>setFormRepIng({...formRepIng,accionesTomadas:e.target.value})}
-                  rows={3}
-                  placeholder="Describe qué se hizo, qué se corrigió, qué se inspeccionó..."
-                  style={s.textarea}
-                />
-              </div>
-
-              {/* Recomendaciones */}
-              <div style={s.card}>
-                <div style={{...s.secTitle,marginBottom:12}}>💡 Recomendaciones</div>
-                <textarea
-                  value={formRepIng.recomendaciones}
-                  onChange={e=>setFormRepIng({...formRepIng,recomendaciones:e.target.value})}
-                  rows={3}
-                  placeholder="Qué se recomienda hacer, próximos pasos, seguimiento necesario..."
-                  style={s.textarea}
-                />
-              </div>
-
-              {/* Múltiples fotos */}
-              <div style={s.card}>
-                <div style={{...s.secTitle,marginBottom:12}}>📷 Registro fotográfico</div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10,marginBottom:10}}>
-                  {(formRepIng.fotos||[]).map((foto,idx)=>(
-                    <div key={idx} style={{position:"relative"}}>
-                      <img src={foto.data} alt="" style={{width:"100%",height:110,objectFit:"cover",borderRadius:6,border:`1px solid ${T.borderDefault}`}}/>
-                      <button onClick={()=>setFormRepIng(p=>({...p,fotos:p.fotos.filter((_,i)=>i!==idx)}))} style={{
-                        position:"absolute",top:4,right:4,background:"rgba(0,0,0,0.65)",color:"#fff",
-                        border:"none",borderRadius:"50%",width:22,height:22,cursor:"pointer",fontSize:12,
-                        display:"flex",alignItems:"center",justifyContent:"center",
-                      }}>×</button>
-                      <div style={{fontSize:9,color:T.textTertiary,marginTop:3,textAlign:"center"}}>Foto {idx+1}</div>
-                    </div>
-                  ))}
-                  {/* Botón agregar foto */}
-                  <label style={{
-                    display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
-                    gap:6,height:110,borderRadius:6,cursor:"pointer",
-                    border:`2px dashed ${T.borderDefault}`,background:T.surfaceSecond,
-                    fontSize:11,color:T.textTertiary,
-                  }}>
-                    <span style={{fontSize:24}}>📷</span>
-                    <span>Agregar foto</span>
-                    <input type="file" accept="image/*" capture="environment" style={{display:"none"}} multiple
-                      onChange={e=>{
-                        const files = Array.from(e.target.files);
-                        files.forEach(file=>{
-                          const reader = new FileReader();
-                          reader.onload = ev => setFormRepIng(p=>({...p,fotos:[...(p.fotos||[]),{data:ev.target.result,nombre:file.name}]}));
-                          reader.readAsDataURL(file);
-                        });
-                      }}/>
-                  </label>
-                </div>
-                <div style={{fontSize:11,color:T.textTertiary}}>
-                  {(formRepIng.fotos||[]).length} foto{(formRepIng.fotos||[]).length!==1?"s":""} adjunta{(formRepIng.fotos||[]).length!==1?"s":""}
-                </div>
-              </div>
-
-
-              {/* Materiales instalados — Ing */}
-              <div style={s.card}>
-                <div style={s.secTitle}>🔧 Materiales instalados</div>
-                <div style={{background:T.accentMuted,border:`1.5px dashed ${T.accentBorder}`,borderRadius:10,padding:12,marginBottom:14}}>
-                  <div style={{marginBottom:8}}>
-                    <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Material</div>
-                    <input value={matFormIng.material} onChange={e=>setMatFormIng(p=>({...p,material:e.target.value}))} placeholder="Ej: Pintura, Tubo PVC, Cable..." style={{...s.input,width:"100%"}}/>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-                    <div>
-                      <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Cantidad</div>
-                      <input type="number" value={matFormIng.cantidad} onChange={e=>setMatFormIng(p=>({...p,cantidad:e.target.value}))} placeholder="0" style={{...s.input,width:"100%"}}/>
-                    </div>
-                    <div>
-                      <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Unidad</div>
-                      <select value={matFormIng.unidad} onChange={e=>setMatFormIng(p=>({...p,unidad:e.target.value}))} style={{...s.select,width:"100%"}}>
-                        <option value="">— Unidad —</option>
-                        {["m","pcs","kg","litros","rollo","caja","galón","par","unidad"].map(u=><option key={u}>{u}</option>)}
-                      </select>
-                    </div>
-                  </div>
-                  <div style={{marginBottom:8}}>
-                    <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Área de uso</div>
-                    <input value={matFormIng.area} onChange={e=>setMatFormIng(p=>({...p,area:e.target.value}))} placeholder="Ej: Lobby, Piscina, Apt. 3B..." style={{...s.input,width:"100%"}}/>
-                  </div>
-                  <div style={{marginBottom:10}}>
-                    <div style={{fontSize:10,fontWeight:700,color:T.textTertiary,textTransform:"uppercase",marginBottom:4}}>Observación <span style={{fontWeight:400,opacity:0.6}}>(opcional)</span></div>
-                    <input value={matFormIng.obs} onChange={e=>setMatFormIng(p=>({...p,obs:e.target.value}))} placeholder="Detalle adicional..." style={{...s.input,width:"100%"}}/>
-                  </div>
-                  <button
-                    onClick={()=>{
-                      if(!matFormIng.material.trim()) return addToast("Escribe el nombre del material","warning");
-                      const nuevo={material:matFormIng.material,cantidad:matFormIng.cantidad||"—",unidad:matFormIng.unidad||"pcs",area:matFormIng.area,obs:matFormIng.obs};
-                      setFormRepIng(p=>({...p,materiales:[...(p.materiales||[]),nuevo]}));
-                      setMatFormIng({material:"",cantidad:"",unidad:"",area:"",obs:""});
-                    }}
-                    style={{...s.btnPrimary,width:"100%",justifyContent:"center",display:"flex",alignItems:"center",gap:6}}
-                  >+ Agregar material</button>
-                </div>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                  <span style={{fontSize:12,fontWeight:600,color:T.textPrimary}}>Materiales agregados</span>
-                  <span style={{background:T.accentMuted,border:`1px solid ${T.accentBorder}`,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:700,color:T.accentText}}>{(formRepIng.materiales||[]).length} items</span>
-                </div>
-                <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  {(formRepIng.materiales||[]).length===0 && (
-                    <div style={{textAlign:"center",padding:20,color:T.textTertiary,fontSize:12,background:T.surfaceSecond,borderRadius:8,border:`1.5px dashed ${T.borderDefault}`}}>📦 Aún no hay materiales agregados</div>
-                  )}
-                  {(formRepIng.materiales||[]).map((m,i)=>(
-                    <div key={i} style={{background:T.surfaceSecond,border:`1.5px solid ${T.accentBorder}`,borderRadius:10,padding:"11px 12px",display:"flex",alignItems:"center",gap:10}}>
-                      <div style={{width:28,height:28,background:T.accentBase,color:"#fff",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,flexShrink:0}}>{i+1}</div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:13,fontWeight:700,color:T.accentText,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{m.material}</div>
-                        <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{m.cantidad} {m.unidad}{m.area?` · 📍 ${m.area}`:""}</div>
-                        {m.obs&&<div style={{fontSize:10,color:T.textTertiary,marginTop:1,fontStyle:"italic",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>💬 {m.obs}</div>}
-                      </div>
-                      <button onClick={()=>setFormRepIng(p=>({...p,materiales:(p.materiales||[]).filter((_,j)=>j!==i)}))}
-                        style={{background:T.dangerMuted,border:`1px solid ${T.dangerBase}33`,color:T.dangerText,borderRadius:6,width:28,height:28,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,cursor:"pointer",flexShrink:0}}>✕</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              {/* Botón crear */}
-              <button onClick={crearRepIng} style={{...s.btnPrimary,width:"100%",padding:14,fontSize:14}}>
-                ◈ Guardar Reporte de Campo
-              </button>
-
-            </div>
-          )}
 
           {/* ── MIS ÓRDENES TÉCNICO ── */}
-          {vista==="misOrdenes" && usuario.rol==="tecnico" && (
-            <div>
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {misOrdenes.length===0 && (
-                  <div style={{textAlign:"center",padding:40,color:T.textTertiary,fontSize:12}}>No tienes órdenes asignadas.</div>
-                )}
-                {misOrdenes.map(o=>(
-                  <div key={o.id} onClick={()=>{abrirOrden(o)}}
-                    style={{background:T.surfacePrimary,borderRadius:8,padding:"12px 14px",
-                      border:`1px solid ${T.borderDefault}`,cursor:"pointer",
-                      display:"flex",flexDirection:"column",gap:6}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                      <div style={{fontSize:13,fontWeight:700,color:T.textPrimary,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1,marginRight:8}}>{o.ph}</div>
-                      <EstadoBadge estado={o.estado}/>
-                    </div>
-                    <div style={{fontSize:11,color:T.textTertiary}}>{o.ubicacion}</div>
-                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:2}}>
-                      <span style={{fontSize:11,color:T.textSecondary,background:T.surfaceSecond,padding:"2px 8px",borderRadius:4}}>{o.tipo}</span>
-                      <span style={{fontSize:11,color:T.textTertiary}}>{o.fecha}</span>
-                    </div>
-                  </div>
-                ))}
+          {vista==="misOrdenes" && usuario.rol==="tecnico" && (()=>{
+            const activas = misOrdenes.filter(o=>o.estado!=="Resuelto"&&o.estado!=="Cerrado");
+            return (
+            <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:680}}>
+              <div style={{...s.card,background:`linear-gradient(135deg,${T.accentBase}10,${T.surfacePrimary})`,border:`1px solid ${T.accentBorder}`}}>
+                <div style={{fontSize:15,fontWeight:800,color:T.textPrimary,marginBottom:2}}>≡ Asignaciones</div>
+                <div style={{fontSize:12,color:T.textTertiary}}>{activas.length} asignacion{activas.length!==1?"es":""} activa{activas.length!==1?"s":""}</div>
               </div>
-            </div>
-          )}
-
-          {/* ── REPORTES ING (visible al técnico) ── */}
-          {vista==="reportesIng" && usuario.rol==="tecnico" && (
-            <div style={{maxWidth:680}}>
-              <div style={{marginBottom:12}}>
-                <span style={{fontSize:11,color:T.textTertiary}}>{repIng.length} reporte{repIng.length!==1?"s":""} de la ingeniera</span>
-              </div>
-              {repIng.length===0 && <p style={{textAlign:"center",color:T.textTertiary,padding:"40px 0",fontSize:12}}>No hay reportes aún.</p>}
-              {repIng.map(r=>(
-                <div key={r.id} style={{...s.card,marginBottom:10,cursor:"default"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:13,fontWeight:700,color:T.textPrimary,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.ph}</div>
-                      <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{r.tipo} · {r.fecha}</div>
-                    </div>
-                    <span style={{fontSize:10,padding:"2px 8px",borderRadius:4,
-                      background:r.estado==="Aprobado"?T.successMuted:T.warningMuted,
-                      color:r.estado==="Aprobado"?T.successText:T.warningText,
-                      fontWeight:700,flexShrink:0}}>{r.estado||"Pendiente"}</span>
+              {activas.length===0 && (
+                <div style={{textAlign:"center",padding:40,color:T.textTertiary,fontSize:12}}>
+                  <div style={{fontSize:32,marginBottom:8}}>✅</div>
+                  No tienes asignaciones pendientes.
+                </div>
+              )}
+              {activas.map(o=>(
+                <div key={o.id} onClick={()=>{abrirOrden(o)}}
+                  style={{...s.card,cursor:"pointer",borderLeft:`4px solid ${o.estado==="En proceso"?T.accentBase:T.warningBase}`}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                    <div style={{fontSize:14,fontWeight:700,color:T.textPrimary,flex:1,marginRight:8}}>{o.ph}</div>
+                    <EstadoBadge estado={o.estado}/>
                   </div>
-                  {r.descripcion && <div style={{fontSize:12,color:T.textSecondary,marginTop:8,lineHeight:1.5}}>{r.descripcion}</div>}
-                  {r.hallazgos && <div style={{fontSize:12,color:T.textSecondary,marginTop:6}}><strong>Hallazgos:</strong> {r.hallazgos}</div>}
-                  {r.recomendaciones && <div style={{fontSize:12,color:T.warningBase,marginTop:6,padding:"6px 10px",background:T.warningMuted,borderRadius:4}}>💡 {r.recomendaciones}</div>}
+                  <div style={{fontSize:12,color:T.textSecondary,marginBottom:4}}>{o.tipo}</div>
+                  <div style={{fontSize:11,color:T.textTertiary}}>{o.ubicacion} · {o.fecha}</div>
+                  {o.foto_dano && <img src={o.foto_dano} alt="" style={{width:"100%",height:100,objectFit:"cover",borderRadius:6,marginTop:8,border:`1px solid ${T.borderDefault}`}}/>}
                 </div>
               ))}
             </div>
-          )}
+            );
+          })()}
 
-          {/* ── MIS REPORTES INGENIERA ── */}
-          {vista==="reporteIngeniera" && usuario.rol==="ingeniera" && (
-            <div style={{maxWidth:680}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                <span style={{fontSize:11,color:T.textTertiary}}>{repIng.length} reporte{repIng.length!==1?"s":""}</span>
-                <button onClick={()=>setVista("nuevoReporteIngeniera")} style={s.btnPrimary}>◈ Nuevo reporte</button>
+          {/* ── ASIGNACIONES TERMINADAS ── */}
+          {vista==="asignacionesTerminadas" && usuario.rol==="tecnico" && (()=>{
+            const terminadas = misOrdenes.filter(o=>o.estado==="Resuelto"||o.estado==="Cerrado");
+            return (
+            <div style={{display:"flex",flexDirection:"column",gap:10,maxWidth:680}}>
+              <div style={{...s.card,background:`linear-gradient(135deg,${T.successBase}10,${T.surfacePrimary})`,border:`1px solid ${T.successBase}33`}}>
+                <div style={{fontSize:15,fontWeight:800,color:T.textPrimary,marginBottom:2}}>✅ Asignaciones Terminadas</div>
+                <div style={{fontSize:12,color:T.textTertiary}}>{terminadas.length} asignacion{terminadas.length!==1?"es":""} completada{terminadas.length!==1?"s":""}</div>
               </div>
-              {repIng.length===0 && <p style={{textAlign:"center",color:T.textTertiary,padding:"40px 0",fontSize:12}}>No hay reportes aún.</p>}
-              {repIng.map(r=>{
-                const estCfg = {
-                  Aprobado:      {bg:T.successMuted,text:T.successText,bdr:`${T.successBase}33`},
-                  Rechazado:     {bg:T.dangerMuted, text:T.dangerText, bdr:`${T.dangerBase}33`},
-                  ["En revisión"]:{bg:T.accentMuted, text:T.accentText, bdr:T.accentBorder},
-                  Pendiente:     {bg:T.warningMuted,text:T.warningText,bdr:`${T.warningBase}33`},
-                }[r.estado]||{bg:T.warningMuted,text:T.warningText,bdr:`${T.warningBase}33`};
-                const fotos = r.fotos||[];
-                return (
-                  <div key={r.id} style={{...s.card,marginBottom:14,borderLeft:`4px solid ${T.accentBase}`}}>
-                    {/* Header */}
-                    <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:10,marginBottom:12}}>
-                      <div>
-                        <span style={{fontSize:10,fontWeight:700,background:T.accentMuted,color:T.accentText,border:`1px solid ${T.accentBorder}`,padding:"2px 8px",borderRadius:4,textTransform:"uppercase",letterSpacing:"0.5px",display:"inline-block",marginBottom:8}}>
-                          {r.tipo}
-                        </span>
-                        <div style={{fontSize:14,fontWeight:700,color:T.textPrimary}}>{r.ph}</div>
-                        <div style={{fontSize:11,color:T.textTertiary,marginTop:2,fontFamily:"'IBM Plex Mono',monospace"}}>
-                          {r.autor||usuario.nombre} · {r.fecha}{r.hora?` · ${fmtHora(r.hora)}`:""}
-                        </div>
-                      </div>
-                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6}}>
-                        <span style={{padding:"3px 10px",borderRadius:4,fontSize:11,fontWeight:600,background:estCfg.bg,color:estCfg.text,border:`1px solid ${estCfg.bdr}`,whiteSpace:"nowrap"}}>
-                          {r.estado}
-                        </span>
-                        <button onClick={()=>{
-                          const hoy = new Date().toLocaleDateString("es",{year:"numeric",month:"long",day:"numeric"});
-                          const seccion = (titulo, contenido) => contenido ? `
-                            <div style="margin:20px 0 8px;background:#1e293b;color:#fff;font-size:10px;font-weight:700;padding:6px 12px;border-radius:3px;text-transform:uppercase;letter-spacing:.8px">${titulo}</div>
-                            <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:4px;padding:14px 16px;font-size:12px;line-height:1.8;color:#374151;white-space:pre-wrap">${contenido}</div>` : "";
-                          const fotosHTML = (r.fotos||[]).length>0 ? `
-                            <div style="margin:20px 0 8px;background:#1e293b;color:#fff;font-size:10px;font-weight:700;padding:6px 12px;border-radius:3px;text-transform:uppercase;letter-spacing:.8px">📷 Registro Fotográfico (${(r.fotos||[]).length} foto${(r.fotos||[]).length!==1?"s":""})</div>
-                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:10px">
-                              ${(r.fotos||[]).map((f,i)=>`<div><img src="${f.data||f}" style="width:100%;height:180px;object-fit:cover;border-radius:6px;border:1px solid #ddd"/><div style="font-size:10px;color:#9ca3af;text-align:center;margin-top:4px">Foto ${i+1}${f.nombre?` — ${f.nombre}`:""}</div></div>`).join("")}
-                            </div>` : "";
-                          const estColor = {Aprobado:"#16A34A",Rechazado:"#DC2626",["En revisión"]:"#2563EB",Pendiente:"#D97706"}[r.estado]||"#D97706";
-                          const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><title>Reporte Ingeniera — ${r.ph}</title>
-                          <style>
-                            @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap');
-                            *{box-sizing:border-box;margin:0;padding:0}
-                            body{font-family:'IBM Plex Sans',Arial,sans-serif;color:#111;background:#fff;font-size:13px}
-                            .page{max-width:820px;margin:0 auto;padding:36px 44px}
-                            .header{display:flex;align-items:center;justify-content:space-between;padding-bottom:18px;border-bottom:2px solid #0D1726;margin-bottom:24px}
-                            .firma-row{display:flex;justify-content:flex-end;margin-top:52px}
-                            .firma-line{width:220px;border-top:1.5px solid #374151;margin:56px auto 8px}
-                            .footer{margin-top:36px;padding-top:12px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af}
-                            @media print{.no-print{display:none!important}.page{padding:20px 28px}}
-                          </style></head><body><div class="page">
-                          <div class="no-print" style="text-align:right;margin-bottom:18px">
-                            <button onclick="window.print()" style="background:#0D1726;color:#fff;border:none;padding:10px 28px;border-radius:6px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;font-size:13px;font-weight:600">🖨 Imprimir / Guardar PDF</button>
-                          </div>
-                          <div class="header">
-                            <div style="display:flex;align-items:center;gap:14px">
-                              <img src="${LOGO_B64}" alt="Logo" style="width:58px;height:58px;object-fit:contain"/>
-                              <div>
-                                <div style="font-size:16px;font-weight:800;color:#0D1726">Fundación Buenaventura</div>
-                                <div style="font-size:10px;color:#6b7280;margin-top:2px;font-family:monospace">DC&amp;S · Sistema de Gestión</div>
-                              </div>
-                            </div>
-                            <div style="text-align:right">
-                              <div style="font-size:19px;font-weight:800;color:#0D1726">REPORTE DE CAMPO</div>
-                              <div style="font-size:12px;font-weight:600;color:#2563EB;margin-top:4px">${r.tipo.toUpperCase()}</div>
-                              <div style="font-size:11px;color:#6b7280;margin-top:4px">${r.ph} · ${r.fecha}${r.hora?" · "+r.hora:""}</div>
-                            </div>
-                          </div>
-                          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
-                            <div style="background:#f0f4ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 16px;font-size:12px"><b>Preparado por:</b> ${r.autor||usuario.nombre}</div>
-                            <div style="background:#f0f4ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 16px;font-size:12px"><b>Proyecto:</b> ${r.ph}</div>
-                            <div style="background:${estColor}18;border:1px solid ${estColor}44;border-radius:6px;padding:10px 16px;font-size:12px;font-weight:700;color:${estColor}">Estado: ${r.estado}</div>
-                          </div>
-                          ${seccion("📝 Descripción General", r.descripcion)}
-                          ${seccion("🔍 Hallazgos Encontrados", r.hallazgos)}
-                          ${seccion("⚙ Acciones Tomadas", r.accionesTomadas)}
-                          ${seccion("💡 Recomendaciones", r.recomendaciones)}
-                          ${fotosHTML}
-                          <div class="firma-row">
-                            <div style="text-align:center">
-                              <div style="font-size:11px;color:#6b7280">Preparado y firmado por,</div>
-                              <div class="firma-line"></div>
-                              <div style="font-size:13px;font-weight:700;color:#0D1726">${r.autor||usuario.nombre}</div>
-                              <div style="font-size:11px;color:#6b7280;margin-top:3px">Ingeniera · DC&amp;S · Fundación Buenaventura</div>
-                              <div style="font-size:11px;color:#6b7280;margin-top:2px">Certified Test Technician</div>
-                            </div>
-                          </div>
-                          <div class="footer"><span>DC&amp;S · Fundación Buenaventura</span><span>Generado el ${hoy}</span></div>
-                          </div></body></html>`;
-                          const w=window.open("","_blank");w.document.write(html);w.document.close();
-                        }} style={{...s.btnSecondary,padding:"5px 10px",fontSize:11}}>
-                          📄 PDF
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Descripción */}
-                    {r.descripcion && <div style={{fontSize:12,color:T.textSecondary,lineHeight:1.7,marginBottom:10}}>{r.descripcion}</div>}
-
-                    {/* Secciones adicionales */}
-                    {(r.hallazgos||r.accionesTomadas||r.recomendaciones) && (
-                      <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:10}}>
-                        {r.hallazgos && <div style={{fontSize:11,background:T.surfaceSecond,border:`1px solid ${T.borderSubtle}`,borderRadius:4,padding:"8px 12px"}}>
-                          <span style={{fontWeight:700,color:T.textPrimary}}>🔍 Hallazgos: </span>
-                          <span style={{color:T.textSecondary}}>{r.hallazgos}</span>
-                        </div>}
-                        {r.accionesTomadas && <div style={{fontSize:11,background:T.surfaceSecond,border:`1px solid ${T.borderSubtle}`,borderRadius:4,padding:"8px 12px"}}>
-                          <span style={{fontWeight:700,color:T.textPrimary}}>⚙ Acciones: </span>
-                          <span style={{color:T.textSecondary}}>{r.accionesTomadas}</span>
-                        </div>}
-                        {r.recomendaciones && <div style={{fontSize:11,background:T.accentMuted,border:`1px solid ${T.accentBorder}`,borderRadius:4,padding:"8px 12px"}}>
-                          <span style={{fontWeight:700,color:T.accentText}}>💡 Recomendaciones: </span>
-                          <span style={{color:T.accentText,opacity:.85}}>{r.recomendaciones}</span>
-                        </div>}
-                      </div>
-                    )}
-
-                    {/* Galería de fotos */}
-                    {(r.fotos||[]).length>0 && (
-                      <div>
-                        <div style={{fontSize:10,color:T.textTertiary,fontWeight:600,marginBottom:6}}>📷 {(r.fotos||[]).length} foto{(r.fotos||[]).length!==1?"s":""}</div>
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
-                          {(r.fotos||[]).map((f,i)=>(
-                            <img key={i} src={f.data||f} alt="" style={{width:80,height:60,objectFit:"cover",borderRadius:4,border:`1px solid ${T.borderDefault}`}}/>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+              {terminadas.length===0 && (
+                <div style={{textAlign:"center",padding:40,color:T.textTertiary,fontSize:12}}>
+                  <div style={{fontSize:32,marginBottom:8}}>📋</div>
+                  Aún no has completado asignaciones.
+                </div>
+              )}
+              {terminadas.map(o=>(
+                <div key={o.id} onClick={()=>{abrirOrden(o)}}
+                  style={{...s.card,cursor:"pointer",borderLeft:`4px solid ${T.successBase}`,opacity:0.9}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                    <div style={{fontSize:14,fontWeight:700,color:T.textPrimary,flex:1,marginRight:8}}>{o.ph}</div>
+                    <EstadoBadge estado={o.estado}/>
                   </div>
-                );
-              })}
+                  <div style={{fontSize:12,color:T.textSecondary,marginBottom:4}}>{o.tipo}</div>
+                  <div style={{fontSize:11,color:T.textTertiary}}>{o.ubicacion} · {o.fecha}</div>
+                  {o.foto_resuelta && <img src={o.foto_resuelta} alt="" style={{width:"100%",height:100,objectFit:"cover",borderRadius:6,marginTop:8,border:`1px solid ${T.successBase}33`}}/>}
+                </div>
+              ))}
             </div>
-          )}
+            );
+          })()}
+
+
+
+
 
           {/* ── INCIDENCIAS DE CALLE ── */}
           {vista==="incidencias" && (
