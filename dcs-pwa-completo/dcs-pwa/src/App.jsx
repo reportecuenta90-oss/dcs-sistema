@@ -1669,7 +1669,7 @@ export default function App() {
 
   function navTo(id){lsSet("dcs_vista",id);setVista(id);setSelOrden(null);setSelReporte(null);setSelInc(null);setPhFiltro("Todos");setEstado("Todos");setTipo("Todos");setTecFiltro("Todos");setFechaDesde("");setFechaHasta("");setFiltrosRep({urgencia:"Todos",fecha:""});}
 
-  const vistaLabel={dashboard:"Dashboard",phs:"PHs",ordenes:"Órdenes de Trabajo",misOrdenes:"Asignaciones",asignacionesTerminadas:"Asignaciones Terminadas",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Bitácora" : "Bitácora de los Conserjes",detalle:"Detalle de Orden",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual",seguimiento:"Seguimiento"};
+  const vistaLabel={dashboard:"Dashboard",phs:"PHs",ordenes:"Órdenes de Trabajo",misOrdenes:"Asignaciones",asignacionesTerminadas:"Asignaciones Terminadas",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Bitácora" : "Bitácora de los Conserjes",detalle:"Detalle de la Asignación",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual",seguimiento:"Seguimiento"};
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
 
   // ── LOADING DB ─────────────────────────────────────────────────────────────
@@ -2998,6 +2998,14 @@ export default function App() {
                 </div>
               )}
 
+              {/* Descripción del problema — admin/ing solo lectura */}
+              {(usuario.rol==="admin"||usuario.rol==="ingeniera") && selOrden.descripcion && (
+                <div style={s.card}>
+                  <div style={s.secTitle}>📝 Descripción del problema</div>
+                  <p style={{fontSize:13,color:T.textSecondary,lineHeight:1.7,marginTop:4}}>{selOrden.descripcion}</p>
+                </div>
+              )}
+
               {/* Historial — solo admin e ing */}
               {(usuario.rol==="admin"||usuario.rol==="ingeniera") && selOrden.historial?.length>0 && (
                 <div style={s.card}>
@@ -3014,30 +3022,36 @@ export default function App() {
                 </div>
               )}
 
-              {/* Registro fotográfico — admin sube foto del daño */}
-              {(usuario.rol==="admin"||usuario.rol==="ingeniera") && (
+              {/* Registro fotográfico — admin/ing SOLO VE las fotos */}
+              {(usuario.rol==="admin"||usuario.rol==="ingeniera") && (fotos[selOrden.id]?.dano || fotos[selOrden.id]?.resuelto || selOrden.foto_dano) && (
                 <div style={s.card}>
                   <div style={s.secTitle}>📷 Registro fotográfico</div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                     {[
-                      {lbl:"Foto del daño",tipo:"dano",editable:usuario.rol==="admin"},
-                      {lbl:"Trabajo realizado",tipo:"resuelto",editable:false},
-                    ].map(({lbl,tipo,editable})=>(
+                      {lbl:"Foto del daño",tipo:"dano",src:fotos[selOrden.id]?.dano||selOrden.foto_dano},
+                      {lbl:"Trabajo realizado",tipo:"resuelto",src:fotos[selOrden.id]?.resuelto},
+                    ].map(({lbl,tipo,src})=>(
                       <div key={tipo}>
                         <div style={{fontSize:10,fontWeight:600,color:T.textTertiary,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:8}}>{lbl}</div>
-                        {fotos[selOrden.id]?.[tipo]
-                          ? <img src={fotos[selOrden.id][tipo]} alt="" style={{width:"100%",height:130,objectFit:"cover",borderRadius:8,border:`2px solid ${tipo==="resuelto"?T.successBase:T.dangerBase}`}}/>
-                          : <div style={{width:"100%",height:130,borderRadius:8,border:`1px dashed ${T.borderStrong}`,background:T.surfaceSecond,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:T.textTertiary}}>{tipo==="resuelto"?"El técnico subirá aquí":"Sin foto"}</div>
+                        {src
+                          ? <img src={src} alt="" style={{width:"100%",height:150,objectFit:"cover",borderRadius:8,border:`2px solid ${tipo==="resuelto"?T.successBase:T.dangerBase}`}}/>
+                          : <div style={{width:"100%",height:150,borderRadius:8,border:`1px dashed ${T.borderSubtle}`,background:T.surfaceSecond,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:T.textTertiary,gap:6}}>
+                              <span style={{fontSize:16}}>📷</span>
+                              {tipo==="resuelto"?"El técnico subirá la evidencia":"Sin foto del daño"}
+                            </div>
                         }
-                        {editable && (
-                          <label style={{display:"block",textAlign:"center",fontSize:11,fontWeight:600,marginTop:6,cursor:"pointer",color:T.dangerBase}}>
-                            📷 {fotos[selOrden.id]?.[tipo]?"Cambiar foto":"Subir foto del daño"}
-                            <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>subirFoto(selOrden.id,tipo,e.target.files[0])}/>
-                          </label>
-                        )}
                       </div>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Foto del daño — técnico la ve para saber qué reparar */}
+              {usuario.rol==="tecnico" && (selOrden.foto_dano||fotos[selOrden.id]?.dano) && (
+                <div style={s.card}>
+                  <div style={s.secTitle}>📷 Foto del daño reportado</div>
+                  <img src={selOrden.foto_dano||fotos[selOrden.id]?.dano} alt="" style={{width:"100%",maxHeight:220,objectFit:"cover",borderRadius:8,border:`2px solid ${T.dangerBase}`,marginTop:6}}/>
+                  {selOrden.descripcion && <p style={{fontSize:12,color:T.textSecondary,marginTop:10,lineHeight:1.6}}><strong>Descripción:</strong> {selOrden.descripcion}</p>}
                 </div>
               )}
 
@@ -3165,6 +3179,9 @@ export default function App() {
                 </div>
               )}
 
+              {/* ── SECCIONES SOLO TÉCNICO ── */}
+              {usuario.rol==="tecnico" && (
+                <>
               {/* Descripción adicional del trabajo */}
               <div style={s.card}>
                 <div style={s.secTitle}>📝 Descripción adicional del trabajo</div>
@@ -3307,6 +3324,8 @@ export default function App() {
                 <div style={s.secTitle}>Notas internas</div>
                 <textarea key={selOrden.id} defaultValue={selOrden.notas} onBlur={e=>actualizarOrden(selOrden.id,{notas:e.target.value})} rows={3} placeholder="Observaciones internas (no aparecen en el PDF)..." style={s.textarea}/>
               </div>
+                </>
+              )}
             </div>
           )}
 
