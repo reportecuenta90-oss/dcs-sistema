@@ -5544,191 +5544,406 @@ export default function App() {
                     <div style="font-size:13px;color:#78350f;line-height:1.8;white-space:pre-wrap">${notaRM.trim()}</div>
                   </div>` : "";
 
-                const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/>
+                const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
 <title>Reporte Mensual — ${MESES[mesRM]} ${anioRM}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'IBM Plex Sans',Arial,sans-serif;color:#0f172a;background:#fff;font-size:13px}
-  .page{max-width:920px;margin:0 auto;padding:40px 48px}
-  .cover{background:linear-gradient(135deg,#0D1726 0%,#1e3a5f 60%,#2563eb 100%);color:#fff;padding:48px;border-radius:12px;margin-bottom:40px}
-  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-  .kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;text-align:center}
-  .kpi.green{background:#f0fdf4;border-color:#86efac}.kpi.blue{background:#eff6ff;border-color:#93c5fd}.kpi.yellow{background:#fffbeb;border-color:#fde68a}.kpi.red{background:#fef2f2;border-color:#fca5a5}.kpi.purple{background:#f5f3ff;border-color:#c4b5fd}
-  .kpi-val{font-size:28px;font-weight:800;line-height:1}
-  .kpi-lbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-top:5px;opacity:.7}
-  .kpi-sub{font-size:10px;margin-top:3px;opacity:.5}
-  .sec{margin-bottom:36px}
-  .sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid #e2e8f0}
-  .sec-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
-  .sec-title{font-size:15px;font-weight:700;color:#0f172a}
-  .sec-sub{font-size:12px;color:#64748b;margin-top:1px}
-  table{width:100%;border-collapse:collapse}
-  th{padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;background:#f8fafc;color:#475569;border-bottom:2px solid #e2e8f0}
-  tr:hover td{background:#f8fafc}
-  .badge-green{background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
-  .badge-red{background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
-  .badge-yellow{background:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+  body{font-family:'IBM Plex Sans',Arial,sans-serif;color:#1a1a2e;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .page{max-width:900px;margin:0 auto}
+
+  /* ── PORTADA ── */
+  .cover{
+    background:linear-gradient(160deg,#0D1726 0%,#162035 45%,#1a2d4a 100%);
+    min-height:297mm;display:flex;flex-direction:column;justify-content:space-between;
+    padding:60px 64px;position:relative;overflow:hidden;page-break-after:always;
+  }
+  .cover::before{
+    content:"";position:absolute;top:-80px;right:-80px;
+    width:400px;height:400px;border-radius:50%;
+    background:radial-gradient(circle,rgba(180,140,60,0.15) 0%,transparent 70%);
+  }
+  .cover::after{
+    content:"";position:absolute;bottom:-60px;left:-60px;
+    width:300px;height:300px;border-radius:50%;
+    background:radial-gradient(circle,rgba(37,99,235,0.1) 0%,transparent 70%);
+  }
+  .cover-logo-area{display:flex;align-items:center;gap:20px}
+  .cover-logo{width:80px;height:80px;object-fit:contain;background:rgba(255,255,255,0.06);border-radius:12px;padding:8px}
+  .cover-brand{color:#fff}
+  .cover-brand-sub{font-size:12px;font-weight:300;opacity:.55;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+  .cover-brand-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;line-height:1.1}
+  .cover-brand-name span{color:#C9A84C}
+  .cover-divider{width:80px;height:2px;background:linear-gradient(90deg,#C9A84C,transparent);margin:40px 0}
+  .cover-title{color:#fff}
+  .cover-title-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;opacity:.5;font-weight:400;margin-bottom:12px}
+  .cover-title-main{font-family:'Playfair Display',serif;font-size:52px;font-weight:800;line-height:1;margin-bottom:8px}
+  .cover-title-main span{color:#C9A84C;display:block;font-size:56px}
+  .cover-title-sub{font-size:18px;font-weight:300;opacity:.7;margin-top:8px}
+  .cover-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid rgba(201,168,76,0.3);padding-top:32px;margin-top:40px}
+  .cover-meta-item{padding:0 24px 0 0}
+  .cover-meta-item:first-child{padding-left:0}
+  .cover-meta-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;opacity:.4;margin-bottom:6px;color:#fff}
+  .cover-meta-value{font-size:15px;font-weight:600;color:#fff}
+  .cover-meta-value span{color:#C9A84C}
+  .cover-footer{display:flex;justify-content:space-between;align-items:flex-end}
+  .cover-confidential{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,0.6);border:1px solid rgba(201,168,76,0.2);padding:4px 12px;border-radius:3px}
+
+  /* ── CONTENIDO ── */
+  .content{padding:48px 64px}
+  .section{margin-bottom:40px;page-break-inside:avoid}
+  .sec-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #f1f5f9}
+  .sec-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+  .sec-title{font-size:17px;font-weight:700;color:#0D1726}
+  .sec-subtitle{font-size:11px;color:#94a3b8;margin-top:2px}
+
+  /* KPIs */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .kpi{border-radius:10px;padding:18px;border:1px solid #e2e8f0}
+  .kpi-val{font-size:32px;font-weight:800;line-height:1;margin-bottom:4px}
+  .kpi-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;opacity:.6}
+  .kpi-sub{font-size:10px;margin-top:4px;opacity:.5}
+  .kpi.gold{background:#fefce8;border-color:#fde68a}.kpi.gold .kpi-val{color:#92400e}
+  .kpi.green{background:#f0fdf4;border-color:#bbf7d0}.kpi.green .kpi-val{color:#15803d}
+  .kpi.blue{background:#eff6ff;border-color:#bfdbfe}.kpi.blue .kpi-val{color:#1d4ed8}
+  .kpi.red{background:#fff1f2;border-color:#fecdd3}.kpi.red .kpi-val{color:#be123c}
+  .kpi.purple{background:#faf5ff;border-color:#e9d5ff}.kpi.purple .kpi-val{color:#7c3aed}
+  .kpi.slate{background:#f8fafc;border-color:#e2e8f0}.kpi.slate .kpi-val{color:#0f172a}
+
+  /* Tablas */
+  table{width:100%;border-collapse:collapse;margin-top:12px;font-size:12px}
+  th{background:#0D1726;color:#fff;padding:9px 12px;text-align:left;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+  th:first-child{border-radius:6px 0 0 6px}th:last-child{border-radius:0 6px 6px 0}
+  td{padding:9px 12px;border-bottom:1px solid #f1f5f9}
+  tr:last-child td{border-bottom:none}
+  tr:nth-child(even) td{background:#f8fafc}
+
+  /* Gráficas */
+  .chart-area{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+
+  /* Estado badges */
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+  .badge-green{background:#dcfce7;color:#15803d}
+  .badge-yellow{background:#fef9c3;color:#92400e}
+  .badge-red{background:#fee2e2;color:#be123c}
+  .badge-blue{background:#dbeafe;color:#1d4ed8}
+
+  /* Incidentes */
+  .incident-row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9}
+  .incident-dot{width:8px;height:8px;border-radius:50%;background:#C9A84C;margin-top:5px;flex-shrink:0}
+
+  /* Firma */
+  .firma-section{margin-top:60px;padding-top:32px;border-top:1px solid #e2e8f0;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+  .firma-box{text-align:center}
+  .firma-line{border-top:1.5px solid #0D1726;margin:48px auto 8px;width:200px}
+  .firma-name{font-size:13px;font-weight:700;color:#0D1726}
+  .firma-title{font-size:11px;color:#94a3b8;margin-top:3px}
+
+  /* Footer */
+  .doc-footer{margin-top:32px;padding:16px 20px;background:#f8fafc;border-radius:8px;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#94a3b8}
+
   @media print{
-    @page{size:A4;margin:15mm}
-    .page{padding:0}
-    .cover{border-radius:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    .no-print{display:none}
-    table{page-break-inside:auto}
-    tr{page-break-inside:avoid}
+    .cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .no-print{display:none!important}
+    .section{page-break-inside:avoid}
   }
 </style>
-</head><body><div class="page">
+</head>
+<body>
 
-  <!-- COVER -->
-  <div class="cover">
-    <div style="display:flex;align-items:center;gap:16px;margin-bottom:32px">
-      <img src="${LOGO_B64}" style="width:56px;height:56px;object-fit:contain;border-radius:8px;background:rgba(255,255,255,0.1);padding:6px"/>
-      <div>
-        <div style="font-size:11px;font-weight:600;opacity:.55;text-transform:uppercase;letter-spacing:1.2px">DC&amp;S · Fundación Buenaventura</div>
-        <div style="font-size:24px;font-weight:800;margin-top:4px;line-height:1.1">Reporte Mensual<br>de Actividades</div>
+<!-- ═══════════════════════════════════════ PORTADA ═══════════════════════════════════════ -->
+<div class="cover">
+  <div>
+    <div class="cover-logo-area">
+      <img src="${LOGO_B64}" class="cover-logo" alt="Logo Buenaventura"/>
+      <div class="cover-brand">
+        <div class="cover-brand-sub">Gestión de Propiedades</div>
+        <div class="cover-brand-name">Fundación Administradora<br><span>BUENAVENTURA</span></div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;background:rgba(255,255,255,0.07);border-radius:8px;padding:20px">
-      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Período</div><div style="font-size:22px;font-weight:800;margin-top:6px">${MESES[mesRM]} ${anioRM}</div></div>
-      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Generado</div><div style="font-size:13px;font-weight:600;margin-top:6px">${fechaGen}</div><div style="font-size:11px;opacity:.55;margin-top:2px">${horaGen} hrs</div></div>
-      <div><div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.8px">Preparado por</div><div style="font-size:13px;font-weight:600;margin-top:6px">${usuario?.nombre||"Administración"}</div><div style="font-size:11px;opacity:.55;margin-top:2px;text-transform:capitalize">${usuario?.rol||""}</div></div>
+
+    <div class="cover-divider"></div>
+
+    <div class="cover-title">
+      <div class="cover-title-label">Informe Oficial de Gestión</div>
+      <div class="cover-title-main">
+        Reporte
+        <span>Mensual</span>
+      </div>
+      <div class="cover-title-sub">Actividades · Mantenimiento · Operaciones</div>
     </div>
   </div>
 
-  <!-- KPIs PRINCIPALES -->
-  <div class="sec">
-    <div class="sec-hdr">
-      <div class="sec-ico" style="background:#eff6ff">📊</div>
-      <div><div class="sec-title">Resumen Ejecutivo</div><div class="sec-sub">Indicadores clave de ${MESES[mesRM]} ${anioRM}</div></div>
+  <div>
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Período</div>
+        <div class="cover-meta-value"><span>${MESES[mesRM]}</span> ${anioRM}</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Proyectos cubiertos</div>
+        <div class="cover-meta-value"><span>${[...new Set(ordenesDelMes.map(o=>o.ph))].length}</span> PHs activos</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Generado el</div>
+        <div class="cover-meta-value">${fechaGen}</div>
+      </div>
     </div>
+
+    <div class="cover-footer" style="margin-top:32px">
+      <div class="cover-meta-label" style="color:rgba(255,255,255,0.35);font-size:9px">Preparado por: ${usuario.nombre} · DC&amp;S Sistema de Gestión</div>
+      <div class="cover-confidential">Uso Interno</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ CONTENIDO ═══════════════════════════════════════ -->
+<div class="content">
+
+  <!-- RESUMEN EJECUTIVO -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-icon" style="background:#fef9c3">📊</div>
+      <div>
+        <div class="sec-title">Resumen Ejecutivo</div>
+        <div class="sec-subtitle">Indicadores clave del período ${MESES[mesRM]} ${anioRM}</div>
+      </div>
+    </div>
+
     <div class="kpi-grid">
-      <div class="kpi blue"><div class="kpi-val" style="color:#1d4ed8">${ordenesDelMes.length}</div><div class="kpi-lbl">Órdenes del mes</div><div class="kpi-sub">${ordenesAnt.length>0?`vs ${ordenesAnt.length} mes ant.`:""}</div></div>
-      <div class="kpi green"><div class="kpi-val" style="color:#15803d">${resueltas.length}</div><div class="kpi-lbl">Resueltas</div><div class="kpi-sub">${tasaRes}% del total</div></div>
-      <div class="kpi yellow"><div class="kpi-val" style="color:#b45309">${enProceso.length+pendientes.length}</div><div class="kpi-lbl">En proceso/pend.</div><div class="kpi-sub">${enProceso.length} proceso · ${pendientes.length} pend.</div></div>
-      <div class="kpi red"><div class="kpi-val" style="color:#b91c1c">${incidenciasDelMes.length}</div><div class="kpi-lbl">Incidencias calle</div></div>
+      <div class="kpi blue">
+        <div class="kpi-val">${ordenesDelMes.length}</div>
+        <div class="kpi-lbl">Total Asignaciones</div>
+        <div class="kpi-sub">Durante el mes</div>
+      </div>
+      <div class="kpi green">
+        <div class="kpi-val">${resueltas.length}</div>
+        <div class="kpi-lbl">Completadas</div>
+        <div class="kpi-sub">Tasa: ${tasaResolucion}%</div>
+      </div>
+      <div class="kpi gold">
+        <div class="kpi-val">${enProceso.length + pendientes.length}</div>
+        <div class="kpi-lbl">En Gestión</div>
+        <div class="kpi-sub">${enProceso.length} proceso · ${pendientes.length} pend.</div>
+      </div>
+      <div class="kpi red">
+        <div class="kpi-val">${incidenciasDelMes.length}</div>
+        <div class="kpi-lbl">Incidencias</div>
+        <div class="kpi-sub">Reportadas en calle</div>
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-      <div class="kpi purple"><div class="kpi-val" style="color:#7c3aed">${reportesDelMes.length}</div><div class="kpi-lbl">Rep. conserjes</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:#0891b2">${reportesIngDelMes.length}</div><div class="kpi-lbl">Rep. ingeniería</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:#0f172a">${materialesUsados.length}</div><div class="kpi-lbl">Materiales usados</div></div>
-      <div class="kpi"><div class="kpi-val" style="color:#0f172a">${tiemProm}</div><div class="kpi-lbl">Días prom. resolución</div></div>
+
+    <div class="kpi-grid">
+      <div class="kpi purple">
+        <div class="kpi-val">${reportesDelMes.length}</div>
+        <div class="kpi-lbl">Entradas Bitácora</div>
+        <div class="kpi-sub">Conserjes</div>
+      </div>
+      <div class="kpi slate">
+        <div class="kpi-val">${reportesIngDelMes.length}</div>
+        <div class="kpi-lbl">Visitas Técnicas</div>
+        <div class="kpi-sub">Ingeniera</div>
+      </div>
+      <div class="kpi slate">
+        <div class="kpi-val">${materialesUsados.length}</div>
+        <div class="kpi-lbl">Materiales Usados</div>
+        <div class="kpi-sub">Registros</div>
+      </div>
+      <div class="kpi slate">
+        <div class="kpi-val">${tiemProm}</div>
+        <div class="kpi-lbl">Días Prom. Resolución</div>
+        <div class="kpi-sub">Tiempo promedio</div>
+      </div>
     </div>
   </div>
 
   <!-- GRÁFICAS -->
-  <div class="sec">
-    <div class="sec-hdr">
-      <div class="sec-ico" style="background:#f0fdf4">📈</div>
-      <div><div class="sec-title">Análisis Visual</div><div class="sec-sub">Distribución de órdenes y tasa de resolución</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;background:#f8fafc;border-radius:8px;padding:20px">
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-icon" style="background:#f0fdf4">📈</div>
       <div>
-        <div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">Órdenes por estado</div>
+        <div class="sec-title">Análisis de Desempeño</div>
+        <div class="sec-subtitle">Distribución de órdenes y comparativo mensual</div>
+      </div>
+    </div>
+    <div class="chart-area">
+      <div>
+        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px">Distribución por Estado</div>
         ${barSVG}
       </div>
       <div style="text-align:center">
-        <div style="font-size:11px;font-weight:600;color:#475569;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Tasa de resolución</div>
+        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Tasa de Resolución</div>
         ${donutSVG}
-        <div style="font-size:11px;color:${diff>=0?"#16a34a":"#dc2626"};font-weight:700;margin-top:4px">${diff>=0?"↑":"↓"} ${Math.abs(diff)}% vs mes ant.</div>
+        <div style="font-size:12px;color:${diff>=0?"#16a34a":"#dc2626"};font-weight:700;margin-top:6px">${diff>=0?"↑":"↓"} ${Math.abs(diff)}% vs mes anterior</div>
       </div>
     </div>
   </div>
 
-  <!-- ÓRDENES CRÍTICAS -->
-  ${criticas.length>0?`
-  <div class="sec">
-    <div class="sec-hdr">
-      <div class="sec-ico" style="background:#fef2f2">🚨</div>
-      <div><div class="sec-title" style="color:#dc2626">Órdenes Críticas / Emergencias</div><div class="sec-sub">${criticas.length} orden${criticas.length!==1?"es":""} requieren atención especial</div></div>
-    </div>
-    <div style="border:1px solid #fca5a5;border-radius:8px;overflow:hidden">
-      <table>
-        <thead style="background:#fef2f2"><tr><th>!</th><th>PH</th><th>Tipo</th><th>Descripción</th><th>Estado</th></tr></thead>
-        <tbody>${rowsCriticas}</tbody>
-      </table>
-    </div>
-  </div>` : ""}
-
-  <!-- POR TÉCNICO -->
-  ${Object.keys(porTecnico).length>0?`
-  <div class="sec">
-    <div class="sec-hdr">
-      <div class="sec-ico" style="background:#f0fdf4">👷</div>
-      <div><div class="sec-title">Actividad por Técnico</div><div class="sec-sub">${Object.keys(porTecnico).length} técnico${Object.keys(porTecnico).length!==1?"s":""} activo${Object.keys(porTecnico).length!==1?"s":""} este mes</div></div>
+  <!-- ASIGNACIONES POR TÉCNICO -->
+  ${rowsTecnicos !== "" ? `
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-icon" style="background:#eff6ff">👷</div>
+      <div>
+        <div class="sec-title">Actividades por Técnico</div>
+        <div class="sec-subtitle">Desempeño del equipo durante ${MESES[mesRM]}</div>
+      </div>
     </div>
     <table>
-      <thead><tr><th>Técnico</th><th style="text-align:center">Órdenes</th><th style="text-align:center">Resueltas</th><th style="text-align:center">Eficiencia</th></tr></thead>
+      <thead><tr>
+        <th>Técnico</th><th style="text-align:center">Total</th>
+        <th style="text-align:center">Completadas</th>
+        <th style="text-align:center">En Proceso</th>
+        <th style="text-align:center">Pendientes</th>
+        <th style="text-align:center">Eficiencia</th>
+      </tr></thead>
       <tbody>${rowsTecnicos}</tbody>
     </table>
-  </div>`:""}
+  </div>` : ""}
 
-  <!-- ÓRDENES POR PH -->
-  ${Object.keys(porPH).length>0?`
-  <div class="sec">
-    <div class="sec-hdr">
-      <div class="sec-ico" style="background:#eff6ff">🏢</div>
-      <div><div class="sec-title">Actividad por Propiedad Horizontal</div><div class="sec-sub">${Object.keys(porPH).length} PH con actividad</div></div>
+  <!-- ASIGNACIONES POR PH -->
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-icon" style="background:#faf5ff">🏢</div>
+      <div>
+        <div class="sec-title">Actividades por Proyecto</div>
+        <div class="sec-subtitle">Resumen de gestión por PH en ${MESES[mesRM]}</div>
+      </div>
     </div>
     <table>
-      <thead><tr><th>Propiedad</th><th style="text-align:center">Total</th><th style="text-align:center">Resueltas</th><th style="text-align:center">Pendientes</th><th style="text-align:center">Tasa</th></tr></thead>
-      <tbody>${rowsOrdenesPorPH}</tbody>
+      <thead><tr>
+        <th>Proyecto PH</th><th style="text-align:center">Órdenes</th>
+        <th style="text-align:center">Resueltas</th>
+        <th style="text-align:center">Pendientes</th>
+        <th style="text-align:center">Resolución</th>
+      </tr></thead>
+      <tbody>${rowsPH}</tbody>
     </table>
-  </div>`:""}
-
-  <!-- DETALLE ÓRDENES -->
-  <div class="sec">
-    <div class="sec-hdr">
-      <div class="sec-ico" style="background:#f0fdf4">📋</div>
-      <div><div class="sec-title">Órdenes de Trabajo${ordenesDelMes.length>50?" (primeras 50)":""}</div><div class="sec-sub">${ordenesDelMes.length} órdenes en ${MESES[mesRM]}</div></div>
-    </div>
-    ${ordenesDelMes.length>0?`<table>
-      <thead><tr><th>ID</th><th>PH</th><th>Tipo</th><th>Descripción</th><th>Estado</th><th>Técnico</th></tr></thead>
-      <tbody>${rowsOrdenes}</tbody>
-    </table>`:`<div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:24px;text-align:center;color:#94a3b8">Sin órdenes en ${MESES[mesRM]} ${anioRM}</div>`}
   </div>
 
-  <!-- INCIDENCIAS -->
-  ${incidenciasDelMes.length>0?`
-  <div class="sec">
-    <div class="sec-hdr">
-      <div class="sec-ico" style="background:#fef2f2">⚑</div>
-      <div><div class="sec-title">Incidencias de Calle</div><div class="sec-sub">${incidenciasDelMes.length} incidencia${incidenciasDelMes.length!==1?"s":""}</div></div>
+  <!-- BITÁCORA CONSERJES -->
+  ${reportesDelMes.length>0 ? `
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-icon" style="background:#fdf4ff">📋</div>
+      <div>
+        <div class="sec-title">Bitácora de Conserjes</div>
+        <div class="sec-subtitle">${reportesDelMes.length} entradas registradas en ${MESES[mesRM]}</div>
+      </div>
     </div>
     <table>
-      <thead><tr><th>Ubicación</th><th>Descripción</th><th>Estado</th><th>Fecha</th></tr></thead>
-      <tbody>${rowsIncidencias}</tbody>
+      <thead><tr>
+        <th>Conserje</th><th>PH</th><th>Fecha</th><th>Turno</th><th style="text-align:center">Incidente</th>
+      </tr></thead>
+      <tbody>
+        ${reportesDelMes.map(r=>`<tr>
+          <td style="font-weight:600">${r.conserje||"—"}</td>
+          <td>${r.ph}</td>
+          <td>${r.fecha}</td>
+          <td>${r.turno||"—"}</td>
+          <td style="text-align:center">${r.huboIncidente||r.novedad?'<span class="badge badge-red">⚠ Sí</span>':'<span class="badge badge-green">No</span>'}</td>
+        </tr>`).join("")}
+      </tbody>
     </table>
-  </div>`:""}
+  </div>` : ""}
+
+  <!-- ÓRDENES CRÍTICAS -->
+  ${criticas.length>0 ? `
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-icon" style="background:#fff1f2">🚨</div>
+      <div>
+        <div class="sec-title">Órdenes que Requieren Atención</div>
+        <div class="sec-subtitle">${criticas.length} elemento${criticas.length!==1?"s":""} crítico${criticas.length!==1?"s":""} identificado${criticas.length!==1?"s":""}</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr>
+        <th>Tipo</th><th>PH</th><th>Ubicación</th>
+        <th style="text-align:center">Urgencia</th><th style="text-align:center">Estado</th>
+      </tr></thead>
+      <tbody>
+        ${criticas.map(o=>`<tr>
+          <td style="font-weight:600">${o.tipo}</td>
+          <td>${o.ph}</td>
+          <td style="color:#64748b;font-size:11px">${o.ubicacion||"—"}</td>
+          <td style="text-align:center"><span class="badge badge-red">${o.urgencia||"Normal"}</span></td>
+          <td style="text-align:center"><span class="badge badge-yellow">${o.estado}</span></td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+  </div>` : ""}
 
   <!-- MATERIALES -->
-  <div class="sec">
-    <div class="sec-hdr">
-      <div class="sec-ico" style="background:#f5f3ff">🔧</div>
-      <div><div class="sec-title">Materiales Instalados</div><div class="sec-sub">Registrados en reportes de ingeniería</div></div>
+  ${materialesUsados.length>0 ? `
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-icon" style="background:#f0fdf4">🔧</div>
+      <div>
+        <div class="sec-title">Materiales e Insumos Utilizados</div>
+        <div class="sec-subtitle">Registro de materiales del mes</div>
+      </div>
     </div>
     <table>
-      <thead><tr><th>Material</th><th style="text-align:center">Cantidad</th><th>Área</th><th>PH</th></tr></thead>
+      <thead><tr>
+        <th>Material</th><th style="text-align:center">Cantidad</th><th>Área</th><th>PH</th>
+      </tr></thead>
       <tbody>${rowsMateriales}</tbody>
     </table>
-  </div>
+  </div>` : ""}
+
+  <!-- INCIDENCIAS DE CALLE -->
+  ${incidenciasDelMes.length>0 ? `
+  <div class="section">
+    <div class="sec-header">
+      <div class="sec-icon" style="background:#fff7ed">🚧</div>
+      <div>
+        <div class="sec-title">Incidencias en Vía Pública</div>
+        <div class="sec-subtitle">${incidenciasDelMes.length} incidencia${incidenciasDelMes.length!==1?"s":""} reportada${incidenciasDelMes.length!==1?"s":""}</div>
+      </div>
+    </div>
+    ${incidenciasDelMes.map(i=>`
+      <div class="incident-row">
+        <div class="incident-dot"></div>
+        <div style="flex:1">
+          <div style="font-size:12px;font-weight:600;color:#0D1726">${i.tipo||i.descripcion?.slice(0,50)||"Incidencia"}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px">${i.ph||""} · ${i.fecha||""} · ${i.ubicacion||""}</div>
+        </div>
+        <span class="badge ${i.estado==="Resuelto"?"badge-green":"badge-yellow"}">${i.estado||"Pendiente"}</span>
+      </div>`).join("")}
+  </div>` : ""}
 
   ${notasHTML}
 
-  <!-- FIRMA -->
-  <div style="margin-top:48px;padding-top:24px;border-top:2px solid #e2e8f0;display:flex;justify-content:space-between;align-items:flex-end">
-    <div>
-      <img src="${LOGO_B64}" style="width:40px;height:40px;object-fit:contain;opacity:.4"/>
-      <div style="font-size:10px;color:#94a3b8;margin-top:6px">DC&amp;S · Fundación Buenaventura</div>
-      <div style="font-size:10px;color:#cbd5e1">Sistema de Gestión de Propiedades</div>
+  <!-- FIRMA Y CIERRE -->
+  <div class="firma-section">
+    <div class="firma-box">
+      <div class="firma-line"></div>
+      <div class="firma-name">${usuario.nombre}</div>
+      <div class="firma-title">${usuario.rol==="ingeniera"?"Ingeniera · DC&S":"Administración · DC&S"}</div>
+      <div class="firma-title" style="margin-top:2px">Fundación Administradora Buenaventura</div>
     </div>
-    <div style="text-align:right">
-      <div style="width:220px;border-top:1px solid #94a3b8;padding-top:8px;font-size:12px;font-weight:600;color:#374151">${usuario?.nombre||"Administración"}</div>
-      <div style="font-size:10px;color:#94a3b8;margin-top:2px">Firma · ${usuario?.rol||""}</div>
+    <div class="firma-box">
+      <div class="firma-line"></div>
+      <div class="firma-name">Junta Directiva</div>
+      <div class="firma-title">Fundación Administradora Buenaventura</div>
+      <div class="firma-title" style="margin-top:2px">Visto Bueno · ${MESES[mesRM]} ${anioRM}</div>
     </div>
   </div>
 
+  <div class="doc-footer">
+    <div style="display:flex;align-items:center;gap:10px">
+      <img src="${LOGO_B64}" style="width:22px;height:22px;object-fit:contain;opacity:.5"/>
+      <span>Fundación Administradora Buenaventura · DC&amp;S Sistema de Gestión</span>
+    </div>
+    <span>Generado: ${fechaGen} a las ${horaGen}</span>
+  </div>
+
 </div>
+
 <script>window.onload=function(){window.print();}</script>
 </body></html>`;
 
