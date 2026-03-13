@@ -1901,12 +1901,7 @@ export default function App() {
                   ) : null;
                 })()}
                 {/* Badge pendientes en diarios */}
-                {m.id==="misDiarios" && (()=>{
-                  const pends = diarios.filter(d=>d.pendientes&&d.autor===usuario?.nombre).length;
-                  return pends>0 ? (
-                    <span style={{background:"#D97706",color:"#fff",borderRadius:10,fontSize:9,fontWeight:800,padding:"1px 5px",minWidth:16,textAlign:"center",marginLeft:sidebarOpen?"0":"auto",flexShrink:0}}>{pends}</span>
-                  ) : null;
-                })()}
+
 
                 {active && sidebarOpen && m.id!=="misNotificaciones" && (
                   <div style={{width:3,height:3,borderRadius:"50%",background:T.sidebarActiveAc,marginLeft:"auto",flexShrink:0}}/>
@@ -2044,23 +2039,25 @@ export default function App() {
           {/* Right */}
           <div style={{display:"flex",alignItems:"center",gap:8,flexShrink:0,position:"relative"}}>
             {(usuario.rol==="admin"||usuario.rol==="ingeniera") && <>
-              <span style={{
+              <button onClick={()=>navTo("ordenes")} style={{
                 display:"flex",alignItems:"center",gap:5,
                 padding:"4px 10px",borderRadius:4,fontSize:11,fontWeight:600,
                 background:T.warningMuted,color:T.warningText,
-                border:`1px solid ${T.warningBase}22`,
+                border:`1px solid ${T.warningBase}44`,
+                cursor:"pointer",fontFamily:"'IBM Plex Sans',sans-serif",
               }}>
                 {ordenes.filter(o=>o.estado==="Pendiente").length} pendiente{ordenes.filter(o=>o.estado==="Pendiente").length!==1?"s":""}
-              </span>
+              </button>
               {reportes.filter(r=>r.novedad).length>0 && (
-                <span style={{
+                <button onClick={()=>navTo("reportesConserje")} style={{
                   display:"flex",alignItems:"center",gap:5,
                   padding:"4px 10px",borderRadius:4,fontSize:11,fontWeight:600,
                   background:T.dangerMuted,color:T.dangerText,
-                  border:`1px solid ${T.dangerBase}22`,
+                  border:`1px solid ${T.dangerBase}44`,
+                  cursor:"pointer",fontFamily:"'IBM Plex Sans',sans-serif",
                 }}>
                   {reportes.filter(r=>r.novedad).length} novedad{reportes.filter(r=>r.novedad).length!==1?"es":""}
-                </span>
+                </button>
               )}
             </>}
 
