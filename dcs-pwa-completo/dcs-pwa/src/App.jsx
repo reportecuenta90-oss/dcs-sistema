@@ -5972,27 +5972,17 @@ export default function App() {
 <script>window.onload=function(){window.print();}</script>
 </body></html>`;
 
-                // Abrir en nueva ventana — el usuario guarda como PDF con Ctrl+P → Guardar como PDF
-                try {
-                  const w = window.open("","_blank");
-                  if(w) {
-                    w.document.write(html);
-                    w.document.close();
-                    addToast("✅ Reporte abierto — usa Ctrl+P para guardar como PDF","success");
-                  } else {
-                    // Si bloquea popups, descarga como HTML
-                    const blob = new Blob([html], {type:"text/html;charset=utf-8"});
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href=url; a.download=`Reporte-Mensual-${MESES[mesRM]}-${anioRM}.html`;
-                    document.body.appendChild(a); a.click();
-                    document.body.removeChild(a); URL.revokeObjectURL(url);
-                    addToast("📄 Descargado — abre el archivo y usa Ctrl+P para PDF","success");
-                  }
-                } catch(err) {
-                  console.error(err);
-                  addToast("Error al generar reporte","error");
-                }
+                // Descarga directa como HTML — confiable en todos los navegadores
+                const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.target = "_blank";
+                a.download = `Reporte-Mensual-${MESES[mesRM]}-${anioRM}.html`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                addToast("📄 Reporte descargado — ábrelo y usa Ctrl+P → Guardar como PDF","success");
                 setGenerando(false);
               })(); } catch(e){ console.error(e); setGenerando(false); }
             };
