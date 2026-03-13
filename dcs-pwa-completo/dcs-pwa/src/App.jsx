@@ -116,9 +116,9 @@ const initRepIng = [
 ];
 
 const MENU = {
-  admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Asignaciones"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora de los Conserjes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
+  admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Asignaciones"},{id:"nueva",icon:"+",label:"Nueva Asignación"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora de los Conserjes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
   tecnico:  [{id:"misOrdenes",icon:"≡",label:"Asignaciones"},{id:"asignacionesTerminadas",icon:"✅",label:"Asignaciones Terminadas"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
-  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Asignaciones"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora de los Conserjes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
+  ingeniera:[{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Asignaciones"},{id:"nueva",icon:"+",label:"Nueva Asignación"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora de los Conserjes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
   conserje: [{id:"nuevoReporte",icon:"📝",label:"Nueva Entrada"},{id:"reportesConserje",icon:"📋",label:"Bitácora"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"}],
 };
 
@@ -604,6 +604,10 @@ export default function App() {
     asignadoA: o.asignado_a, aprobado: o.aprobado||false,
     notas: o.notas||"", descripcionTrabajo: o.descripcion_trabajo||"",
     conclusiones: o.conclusiones||"",
+    urgencia: o.urgencia||"Normal",
+    descripcion: o.descripcion||"",
+    foto_dano: o.foto_dano||null,
+    foto_resuelta: o.foto_resuelta||null,
     mediciones: o.mediciones||[], materiales: o.materiales||[],
     insumos: o.insumos||[], checklist: o.checklist||[],
     historial: o.historial||[],
@@ -822,19 +826,34 @@ export default function App() {
   }
   function crearOrden(){
     if(!formOrden.ubicacion||!formOrden.fecha)return addToast("Completa ubicación y fecha.","warning");
+    if(!formOrden.descripcion?.trim())return addToast("Escribe la descripción del problema.","warning");
     if(formOrden.tipo==="Otro"&&!ordenTipoOtro.trim())return addToast("Escribe el tipo de servicio.","warning");
     const tipoFinal = formOrden.tipo==="Otro" ? ordenTipoOtro.trim() : formOrden.tipo;
     const now=new Date().toLocaleString("es",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
-    const o={...formOrden,tipo:tipoFinal,id:crypto.randomUUID(),estado:"Pendiente",aprobado:false,asignadoA:formOrden.asignadoA?Number(formOrden.asignadoA):null,mediciones:[],materiales:[],checklist:[],historial:[{fecha:now,usuario:usuario.nombre,accion:"Orden creada"}]};
-    setOrdenes(p=>[o,...p]);addToast("Orden creada");pushNotif(`Nueva orden: ${o.ph}`,"📋");
-    setOrdenTipoOtro("");setVista("ordenes");
+    const o={...formOrden,tipo:tipoFinal,id:crypto.randomUUID(),estado:"Pendiente",aprobado:false,
+      asignadoA:formOrden.asignadoA?Number(formOrden.asignadoA):null,
+      urgencia:formOrden.urgencia||"Normal",
+      descripcion:formOrden.descripcion||"",
+      foto_dano:formOrden.fotoDano||null,
+      mediciones:[],materiales:[],checklist:[],
+      historial:[{fecha:now,usuario:usuario.nombre,accion:"Asignación creada"}]};
+    setOrdenes(p=>[o,...p]);
+    // Si tiene foto del daño guardarla en fotos state
+    if(o.foto_dano) setFotos(p=>({...p,[o.id]:{...p[o.id],dano:o.foto_dano}}));
+    addToast("✅ Asignación creada");
+    pushNotif(`Nueva asignación: ${o.ph} — ${tipoFinal}`,"📋");
+    setOrdenTipoOtro("");
+    setFormOrden(p=>({...p,descripcion:"",urgencia:"Normal",fotoDano:null,notas:"",ubicacion:"",fecha:""}));
+    setVista("ordenes");
     // Sync a Supabase
     if(dbOnline) {
       supa.post("ordenes",{
         tipo:o.tipo, ph:o.ph, ubicacion:o.ubicacion, fecha:o.fecha,
         estado:"Pendiente", asignado_a:o.asignadoA, aprobado:false,
+        urgencia:o.urgencia, descripcion:o.descripcion,
+        foto_dano:o.foto_dano||null,
         notas:o.notas||"", mediciones:[], materiales:[], insumos:[], checklist:[],
-        historial:[{fecha:now,usuario:usuario.nombre,accion:"Orden creada"}]
+        historial:[{fecha:now,usuario:usuario.nombre,accion:"Asignación creada"}]
       }).then(saved=>{ if(saved?.id) setOrdenes(p=>p.map(x=>x.id===o.id?{...x,id:saved.id}:x)); }).catch(()=>{});
     }
   }
@@ -2592,16 +2611,24 @@ export default function App() {
 
           {/* ── NUEVA ORDEN ── */}
           {vista==="nueva" && (
-            <div style={{maxWidth:500}}>
+            <div style={{maxWidth:560,display:"flex",flexDirection:"column",gap:14}}>
+
+              {/* Header */}
+              <div style={{...s.card,background:`linear-gradient(135deg,${T.accentBase}10,${T.surfacePrimary})`,border:`1px solid ${T.accentBorder}`}}>
+                <div style={{fontSize:15,fontWeight:800,color:T.textPrimary}}>+ Nueva Asignación</div>
+                <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>Completa todos los campos para crear la asignación</div>
+              </div>
+
               <div style={s.card}>
-                {[{label:"Proyecto PH",key:"ph",opts:PHS}].map(f=>(
-                  <div key={f.key} style={{marginBottom:18}}>
-                    <label style={s.label}>{f.label}</label>
-                    <select value={formOrden[f.key]} onChange={e=>setFormOrden({...formOrden,[f.key]:e.target.value})} style={s.select}>
-                      {f.opts.map(o=><option key={o}>{o}</option>)}
-                    </select>
-                  </div>
-                ))}
+                {/* PH */}
+                <div style={{marginBottom:18}}>
+                  <label style={s.label}>PH</label>
+                  <select value={formOrden.ph} onChange={e=>setFormOrden({...formOrden,ph:e.target.value})} style={s.select}>
+                    {PHS.map(o=><option key={o}>{o}</option>)}
+                  </select>
+                </div>
+
+                {/* Tipo de servicio */}
                 <div style={{marginBottom:18}}>
                   <SelectConOtro
                     label="Tipo de servicio"
@@ -2614,8 +2641,38 @@ export default function App() {
                     s={s} T={T}
                   />
                 </div>
-                <div style={{marginBottom:18}}><label style={s.label}>Ubicación *</label><input value={formOrden.ubicacion} onChange={e=>setFormOrden({...formOrden,ubicacion:e.target.value})} placeholder="Ej: Tablero principal · Piso 3" style={s.input}/></div>
-                <div style={{marginBottom:18}}><label style={s.label}>Fecha *</label><input type="date" value={formOrden.fecha} onChange={e=>setFormOrden({...formOrden,fecha:e.target.value})} style={s.input}/></div>
+
+                {/* Urgencia */}
+                <div style={{marginBottom:18}}>
+                  <label style={s.label}>Urgencia</label>
+                  <div style={{display:"flex",gap:8}}>
+                    {URGENCIAS.map(u=>{
+                      const cfg={Normal:{bg:T.successMuted,border:T.successBase,text:T.successText,icon:"🟢"},Urgente:{bg:T.warningMuted,border:T.warningBase,text:T.warningText,icon:"🟡"},Emergencia:{bg:T.dangerMuted,border:T.dangerBase,text:T.dangerText,icon:"🔴"}}[u];
+                      const active=(formOrden.urgencia||"Normal")===u;
+                      return <button key={u} onClick={()=>setFormOrden({...formOrden,urgencia:u})} style={{flex:1,padding:"9px 4px",borderRadius:6,cursor:"pointer",fontSize:11,fontFamily:"'IBM Plex Sans',sans-serif",fontWeight:active?700:500,border:`1.5px solid ${active?cfg.border:T.borderDefault}`,background:active?cfg.bg:"transparent",color:active?cfg.text:T.textTertiary,transition:"all .15s"}}>{cfg.icon} {u}</button>;
+                    })}
+                  </div>
+                </div>
+
+                {/* Descripción del problema */}
+                <div style={{marginBottom:18}}>
+                  <label style={s.label}>Descripción del problema *</label>
+                  <textarea value={formOrden.descripcion||""} onChange={e=>setFormOrden({...formOrden,descripcion:e.target.value})} rows={3} placeholder="Describe el problema o trabajo a realizar..." style={s.textarea}/>
+                </div>
+
+                {/* Ubicación */}
+                <div style={{marginBottom:18}}>
+                  <label style={s.label}>Ubicación *</label>
+                  <input value={formOrden.ubicacion} onChange={e=>setFormOrden({...formOrden,ubicacion:e.target.value})} placeholder="Ej: Tablero principal · Piso 3" style={s.input}/>
+                </div>
+
+                {/* Fecha */}
+                <div style={{marginBottom:18}}>
+                  <label style={s.label}>Fecha *</label>
+                  <input type="date" value={formOrden.fecha} onChange={e=>setFormOrden({...formOrden,fecha:e.target.value})} style={s.input}/>
+                </div>
+
+                {/* Técnico */}
                 <div style={{marginBottom:18}}>
                   <label style={s.label}>Asignar técnico</label>
                   <select value={formOrden.asignadoA} onChange={e=>setFormOrden({...formOrden,asignadoA:e.target.value})} style={s.select}>
@@ -2623,8 +2680,38 @@ export default function App() {
                     {TECNICOS.map(t2=><option key={t2.id} value={t2.id}>{t2.nombre}</option>)}
                   </select>
                 </div>
-                <div style={{marginBottom:20}}><label style={s.label}>Notas</label><textarea value={formOrden.notas} onChange={e=>setFormOrden({...formOrden,notas:e.target.value})} rows={3} placeholder="Observaciones iniciales..." style={s.textarea}/></div>
-                <button onClick={crearOrden} style={{...s.btnPrimary,width:"100%",padding:12}}>Crear Orden</button>
+
+                {/* Foto del daño */}
+                <div style={{marginBottom:18}}>
+                  <label style={s.label}>Foto del daño <span style={{fontWeight:400,color:T.textTertiary}}>(opcional)</span></label>
+                  {formOrden.fotoDano ? (
+                    <div style={{position:"relative",marginTop:6}}>
+                      <img src={formOrden.fotoDano} alt="" style={{width:"100%",maxHeight:200,objectFit:"cover",borderRadius:8,border:`1px solid ${T.borderDefault}`}}/>
+                      <button onClick={()=>setFormOrden({...formOrden,fotoDano:null})} style={{position:"absolute",top:6,right:6,background:"rgba(0,0,0,0.6)",color:"#fff",border:"none",borderRadius:"50%",width:26,height:26,cursor:"pointer",fontSize:13}}>×</button>
+                    </div>
+                  ) : (
+                    <label style={{display:"flex",alignItems:"center",gap:8,padding:"12px 16px",border:`2px dashed ${T.borderDefault}`,borderRadius:8,cursor:"pointer",background:T.surfaceSecond,marginTop:6}}>
+                      <span style={{fontSize:20}}>📷</span>
+                      <span style={{fontSize:12,color:T.textTertiary}}>Toca para subir foto del daño</span>
+                      <input type="file" accept="image/*" style={{display:"none"}} onChange={e=>{
+                        const file=e.target.files[0];if(!file)return;
+                        const reader=new FileReader();
+                        reader.onload=ev=>setFormOrden({...formOrden,fotoDano:ev.target.result});
+                        reader.readAsDataURL(file);
+                      }}/>
+                    </label>
+                  )}
+                </div>
+
+                {/* Notas */}
+                <div style={{marginBottom:20}}>
+                  <label style={s.label}>Notas adicionales</label>
+                  <textarea value={formOrden.notas} onChange={e=>setFormOrden({...formOrden,notas:e.target.value})} rows={2} placeholder="Observaciones adicionales..." style={s.textarea}/>
+                </div>
+
+                <button onClick={crearOrden} style={{...s.btnPrimary,width:"100%",padding:13,fontSize:14}}>
+                  + Crear Asignación
+                </button>
               </div>
             </div>
           )}
@@ -4498,7 +4585,7 @@ export default function App() {
           })()}
 
           {/* ── DIARIO DE CAMPO ── solo ingeniera */}
-          {vista==="diarioCampo" && usuario?.rol==="ingeniera" && (()=>{
+          {vista==="diarioCampo" && (usuario?.rol==="ingeniera"||usuario?.rol==="admin") && (()=>{
 
             const agregarBloque = () => {
               if(!formBloque.hallazgos&&!formBloque.ordenes&&!formBloque.accionesTomadas)
@@ -5352,9 +5439,10 @@ export default function App() {
             // Órdenes críticas (emergencias o pendientes de hace más de 7 días)
             const criticas = ordenesDelMes.filter(o=>o.urgencia==="Emergencia"||(o.estado==="Pendiente"&&o.fecha_creacion&&(new Date()-new Date(o.fecha_creacion))>7*24*60*60*1000));
 
-            const generarPDF = () => {
+            const generarPDF = async () => {
               setGenerando(true);
-              setTimeout(()=>{
+              await new Promise(r=>setTimeout(r,300));
+              try { await (async ()=>{
                 const ahora = new Date();
                 const fechaGen = ahora.toLocaleDateString("es",{year:"numeric",month:"long",day:"numeric"});
                 const horaGen  = ahora.toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"});
@@ -5644,15 +5732,71 @@ export default function App() {
 <script>window.onload=function(){window.print();}</script>
 </body></html>`;
 
-                // Descarga directa como HTML (abre y auto-imprime/guarda)
-                const blob = new Blob([html], {type:"text/html;charset=utf-8"});
-                const url  = URL.createObjectURL(blob);
-                const a    = document.createElement("a");
-                a.href = url; a.download = `Reporte-${MESES[mesRM]}-${anioRM}.html`;
-                document.body.appendChild(a); a.click();
-                document.body.removeChild(a); URL.revokeObjectURL(url);
+                // Generar PDF usando jsPDF + html2canvas via CDN
+                const loadScript = (src) => new Promise((res,rej)=>{
+                  if(document.querySelector(`script[src="${src}"]`)){res();return;}
+                  const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);
+                });
+
+                try {
+                  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+                  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+
+                  // Crear iframe oculto con el HTML
+                  const iframe = document.createElement("iframe");
+                  iframe.style.cssText = "position:fixed;left:-9999px;top:-9999px;width:900px;height:auto;border:none;";
+                  document.body.appendChild(iframe);
+                  iframe.contentDocument.open();
+                  // Remove auto-print script from html
+                  const htmlClean = html.replace("<script>window.onload=function(){window.print();}<\/script>","");
+                  iframe.contentDocument.write(htmlClean);
+                  iframe.contentDocument.close();
+
+                  await new Promise(r=>setTimeout(r,1500));
+
+                  const {jsPDF} = window.jspdf;
+                  const pdf = new jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+                  const pageWidth = pdf.internal.pageSize.getWidth();
+                  const pageHeight = pdf.internal.pageSize.getHeight();
+                  const margin = 10;
+
+                  const canvas = await window.html2canvas(iframe.contentDocument.body,{
+                    scale:2, useCORS:true, allowTaint:true,
+                    width:880, windowWidth:900,
+                  });
+
+                  document.body.removeChild(iframe);
+
+                  const imgData = canvas.toDataURL("image/jpeg",0.92);
+                  const imgWidth = pageWidth - margin*2;
+                  const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                  let yPos = margin;
+                  let remaining = imgHeight;
+
+                  while(remaining > 0) {
+                    pdf.addImage(imgData,"JPEG",margin,yPos,imgWidth,imgHeight);
+                    remaining -= (pageHeight - margin*2);
+                    if(remaining > 0){
+                      pdf.addPage();
+                      yPos = margin - (imgHeight - remaining);
+                    }
+                  }
+
+                  pdf.save(`Reporte-Mensual-${MESES[mesRM]}-${anioRM}.pdf`);
+                  addToast("✅ PDF descargado","success");
+                } catch(err) {
+                  console.error(err);
+                  // Fallback: descarga HTML
+                  const blob = new Blob([html], {type:"text/html;charset=utf-8"});
+                  const url  = URL.createObjectURL(blob);
+                  const a    = document.createElement("a");
+                  a.href = url; a.download = `Reporte-${MESES[mesRM]}-${anioRM}.html`;
+                  document.body.appendChild(a); a.click();
+                  document.body.removeChild(a); URL.revokeObjectURL(url);
+                  addToast("PDF no disponible — descargado como HTML","warning");
+                }
                 setGenerando(false);
-              },300);
+              })(); } catch(e){ console.error(e); setGenerando(false); }
             };
 
             return (
