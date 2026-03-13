@@ -3279,7 +3279,7 @@ export default function App() {
                     <div style={{background:T.surfaceSecond,borderRadius:8,padding:10,marginBottom:10,maxHeight:180,overflowY:"auto"}}>
                       {novedadesHora.map((n,i)=>(
                         <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"6px 0",borderBottom:i<novedadesHora.length-1?`1px solid ${T.borderSubtle}`:"none"}}>
-                          <span style={{fontSize:11,fontWeight:700,color:T.accentBase,flexShrink:0,background:T.accentMuted,padding:"2px 6px",borderRadius:4}}>{n.hora}</span>
+                          <span style={{fontSize:11,fontWeight:700,color:T.accentBase,flexShrink:0,background:T.accentMuted,padding:"2px 6px",borderRadius:4}}>{fmtHora(n.hora)}</span>
                           <span style={{fontSize:12,color:T.textPrimary,flex:1}}>{n.texto}</span>
                           <button onClick={()=>setNovedadesHora(p=>p.filter((_,j)=>j!==i))} style={{background:"none",border:"none",cursor:"pointer",fontSize:12,color:T.textTertiary}}>✕</button>
                         </div>
@@ -3682,7 +3682,7 @@ export default function App() {
                     <div style={{fontSize:11,fontWeight:600,color:T.textTertiary,marginBottom:6,textTransform:"uppercase",letterSpacing:".6px"}}>Registro por hora</div>
                     {selReporte.novedadesHora.map((n,i)=>(
                       <div key={i} style={{display:"flex",gap:8,padding:"6px 0",borderBottom:i<selReporte.novedadesHora.length-1?`1px solid ${T.borderSubtle}`:"none"}}>
-                        <span style={{fontSize:11,fontWeight:700,color:T.accentBase,background:T.accentMuted,padding:"2px 7px",borderRadius:4,flexShrink:0}}>{n.hora}</span>
+                        <span style={{fontSize:11,fontWeight:700,color:T.accentBase,background:T.accentMuted,padding:"2px 7px",borderRadius:4,flexShrink:0}}>{fmtHora(n.hora)}</span>
                         <span style={{fontSize:12,color:T.textPrimary}}>{n.texto}</span>
                       </div>
                     ))}
@@ -3759,107 +3759,77 @@ export default function App() {
                 )}
               </div>
 
-              {/* Panel de aprobación — solo ingeniera */}
-              {usuario.rol==="ingeniera" && (
-                <div style={{...s.card,border:`1px solid ${T.accentBorder}`}}>
-                  <div style={{...s.secTitle,color:T.accentText}}>✍ Revisión — Ing. Mitche Pérez</div>
+              {/* Panel de revisión — admin e ingeniera */}
+              {(usuario.rol==="ingeniera"||usuario.rol==="admin") && (
+                <div style={{...s.card,border:`1px solid ${T.borderDefault}`}}>
+                  <div style={{...s.secTitle,marginBottom:14}}>👁 Revisión de Bitácora</div>
 
                   {/* Comentario */}
                   <div style={{marginBottom:16}}>
-                    <label style={s.label}>Comentario / observación técnica</label>
+                    <label style={s.label}>Observaciones / seguimiento</label>
                     <textarea
                       key={selReporte.id+"com"}
                       defaultValue={selReporte.comentarioIng||""}
                       onBlur={e=>{
-                        const val = e.target.value;
-                        if(val && val !== selReporte.comentarioIng) {
-                          actualizarReporte(selReporte.id,{comentarioIng:val});
-                          pushNotif(`💬 Ing. Mitche comentó tu reporte de ${selReporte.ph}`,"💬");
-                        } else {
-                          actualizarReporte(selReporte.id,{comentarioIng:val});
-                        }
+                        const val=e.target.value;
+                        actualizarReporte(selReporte.id,{comentarioIng:val});
                       }}
                       rows={3}
-                      placeholder="Añade observaciones técnicas, instrucciones de seguimiento, etc..."
+                      placeholder="Añade observaciones o instrucciones de seguimiento..."
                       style={s.textarea}
                     />
                   </div>
 
-                  {/* Botones de acción */}
-                  {!selReporte.aprobadoPorIng ? (
-                    <div style={{display:"flex",flexDirection:"column",gap:12}}>
-                      {/* Canvas firma digital */}
-                      <div>
-                        <div style={{fontSize:11,fontWeight:600,color:T.textSecondary,marginBottom:6}}>Firma digital (dibuje su firma):</div>
-                        <canvas
-                          ref={firmaRef}
-                          width={400} height={100}
-                          onMouseDown={firmaStart} onMouseMove={firmaDraw} onMouseUp={firmaEnd} onMouseLeave={firmaEnd}
-                          onTouchStart={firmaStart} onTouchMove={firmaDraw} onTouchEnd={firmaEnd}
-                          style={{border:`2px dashed ${T.border}`,borderRadius:6,cursor:"crosshair",background:"#fff",maxWidth:"100%",display:"block",touchAction:"none"}}
-                        />
-                        <button onClick={firmaClear} style={{...s.btnSecondary,padding:"4px 10px",fontSize:11,marginTop:6}}>✕ Limpiar firma</button>
-                      </div>
-                      <div style={{display:"flex",gap:10}}>
-                        <button
-                          onClick={()=>{
-                            const now = new Date().toLocaleString("es",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
-                            actualizarReporte(selReporte.id,{aprobadoPorIng:true,fechaAprobacion:now,estadoRep:"Aprobado",firmaDigital:firmaCanvas||null});
-                            addToast("Reporte aprobado y firmado");
-                            pushNotif(`✅ Tu reporte de ${selReporte.ph} fue aprobado por Ing. Mitche`,"✅");
-                            firmaClear();
-                          }}
-                          style={{...s.btnPrimary,flex:1,padding:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}
-                        >
-                          ✓ Aprobar y firmar reporte
-                        </button>
-                        <button
-                          onClick={()=>{
-                            actualizarReporte(selReporte.id,{aprobadoPorIng:false,estadoRep:"Requiere seguimiento"});
-                            addToast("Marcado como requiere seguimiento","warning");
-                            pushNotif(`⚠️ Tu reporte de ${selReporte.ph} requiere seguimiento`,"⚠️");
-                          }}
-                          style={{...s.btnSecondary,padding:"10px 16px",color:T.warningText,borderColor:`${T.warningBase}44`}}
-                        >
-                          ⚠ Requiere seguimiento
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
+                  {/* Estado actual */}
+                  {selReporte.estadoRep && selReporte.estadoRep!=="Pendiente" && (
                     <div style={{
-                      display:"flex",alignItems:"center",gap:12,
-                      background:T.successMuted,border:`1px solid ${T.successBase}33`,
-                      borderRadius:6,padding:"12px 16px",
+                      display:"flex",alignItems:"center",gap:10,marginBottom:14,
+                      padding:"10px 14px",borderRadius:6,
+                      background:selReporte.estadoRep==="Revisado"?T.successMuted:T.warningMuted,
+                      border:`1px solid ${selReporte.estadoRep==="Revisado"?T.successBase:T.warningBase}33`,
                     }}>
-                      <span style={{fontSize:20}}>✅</span>
+                      <span style={{fontSize:16}}>{selReporte.estadoRep==="Revisado"?"✅":"⚠️"}</span>
                       <div>
-                        <div style={{fontSize:13,fontWeight:600,color:T.successText}}>Reporte aprobado y firmado</div>
-                        <div style={{fontSize:11,color:T.successText,marginTop:2,opacity:0.8}}>{selReporte.fechaAprobacion}</div>
+                        <div style={{fontSize:12,fontWeight:700,color:selReporte.estadoRep==="Revisado"?T.successText:T.warningText}}>
+                          {selReporte.estadoRep}
+                        </div>
+                        {selReporte.fechaAprobacion && <div style={{fontSize:10,color:T.textTertiary,marginTop:1}}>{selReporte.fechaAprobacion}</div>}
                       </div>
                       <button
-                        onClick={()=>actualizarReporte(selReporte.id,{aprobadoPorIng:false,estadoRep:"Pendiente",fechaAprobacion:null})}
+                        onClick={()=>actualizarReporte(selReporte.id,{estadoRep:"Pendiente",fechaAprobacion:null})}
                         style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.textTertiary}}
-                      >
-                        Deshacer
-                      </button>
+                      >Deshacer</button>
+                    </div>
+                  )}
+
+                  {/* Botones */}
+                  {(!selReporte.estadoRep||selReporte.estadoRep==="Pendiente") && (
+                    <div style={{display:"flex",gap:10}}>
+                      <button
+                        onClick={()=>{
+                          const now=new Date().toLocaleString("es",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+                          actualizarReporte(selReporte.id,{estadoRep:"Revisado",aprobadoPorIng:true,fechaAprobacion:now});
+                          addToast("Bitácora marcada como revisada ✅");
+                          pushNotif(`✅ Tu bitácora de ${selReporte.ph} fue revisada`,"✅");
+                        }}
+                        style={{...s.btnPrimary,flex:1,padding:"11px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}
+                      >✅ Revisado</button>
+                      <button
+                        onClick={()=>{
+                          const now=new Date().toLocaleString("es",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+                          actualizarReporte(selReporte.id,{estadoRep:"Requiere seguimiento",aprobadoPorIng:false,fechaAprobacion:now});
+                          addToast("Marcado como requiere seguimiento ⚠️","warning");
+                          pushNotif(`⚠️ Tu bitácora de ${selReporte.ph} requiere seguimiento`,"⚠️");
+                        }}
+                        style={{...s.btnSecondary,flex:1,padding:"11px 0",color:T.warningText,borderColor:`${T.warningBase}44`,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}
+                      >⚠️ Requiere seguimiento</button>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Estado para admin (solo lectura de aprobación) */}
-              {usuario.rol==="admin" && selReporte.aprobadoPorIng && (
-                <div style={{...s.card,border:`1px solid ${T.successBase}33`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <span style={{fontSize:20}}>✅</span>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:600,color:T.successText}}>Aprobado por Ing. Mitche Pérez</div>
-                      <div style={{fontSize:11,color:T.textTertiary,marginTop:2}}>{selReporte.fechaAprobacion}</div>
-                      {selReporte.comentarioIng && <div style={{fontSize:12,color:T.textSecondary,marginTop:4,fontStyle:"italic"}}>"{selReporte.comentarioIng}"</div>}
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Spacer */}
+              <div style={{height:1}}/>
 
               {/* Comentario de ingeniera visible para el conserje aunque no esté aprobado */}
               {usuario.rol==="conserje" && selReporte.comentarioIng && !selReporte.aprobadoPorIng && (
