@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { createClient } from "@supabase/supabase-js";
 
 // ── Supabase cliente ──────────────────────────────────────────────────────────
 const SUPA_URL = "https://irldxqsbfczabbvdjnkg.supabase.co";
-const SUPA_KEY = "sb_publishable_KnmuwUjjvYNRnQVIDcAMUA_WYTZHvi7";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlybGR4cXNiZmN6YWJidmRqbmtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzk0NTgsImV4cCI6MjA4ODY1NTQ1OH0.OHghV0zicn6wIsOqcBuw3qu6pBTkBy5o50mXkSHTmb0";
+const supabaseAuth = createClient(SUPA_URL, SUPA_KEY);
 
 const supa = {
   _h: { "Content-Type": "application/json", "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY },
@@ -456,6 +458,7 @@ export default function App() {
   const [anioRM,setAnioRM]         = useState(()=>new Date().getFullYear());
   const [notaRM,setNotaRM]         = useState("");
   const [generando,setGenerando]   = useState(false);
+  const [fotoModal,setFotoModal]     = useState(null); // {src, titulo}
   const [diarioEditId,setDiarioEditId]   = useState(null); // id del diario en edición
   const [formDiario,setFormDiario] = useState({
     fecha: new Date().toISOString().split("T")[0],
@@ -700,7 +703,7 @@ export default function App() {
     };
   },[usuario]);
 
-  // ── Lógica ─────────────────────────────────────────────────────────────────
+ // ── Lógica ─────────────────────────────────────────────────────────────────
   function addToast(msg,type="success"){
     const id=crypto.randomUUID();
     setToasts(p=>[...p,{id,msg,type}]);
@@ -709,11 +712,35 @@ export default function App() {
   function pushNotif(msg,icon="🔔"){
     setNotifs(p=>[{id:crypto.randomUUID(),msg,time:"ahora mismo",icon,read:false},...p]);
   }
-  function login(){
-    const all=[...USUARIOS,...conserjes.filter(c=>!USUARIOS.find(u=>u.id===c.id))];
-    const u=all.find(x=>x.correo===loginForm.correo&&x.pass===loginForm.pass);
-    if(u){setUsuario(u);lsSet("dcs_session",u);setLoginError("");const initV=u.rol==="conserje"?"nuevoReporte":u.rol==="tecnico"?"misOrdenes":"dashboard";lsSet("dcs_vista",initV);setVista(initV);}
-    else setLoginError("Correo o contraseña incorrectos.");
+  async function login(){
+    setLoginError("");
+    const { data, error } = await supabaseAuth.auth.signInWithPassword({
+      email: loginForm.correo,
+      password: loginForm.pass,
+    });
+    if(error){ setLoginError("Correo o contraseña incorrectos."); return; }
+
+    const token = data.session.access_token;
+    const res = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${data.user.id}&select=*`, {
+      headers: {
+        "apikey": SUPA_KEY,
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json"
+      }
+    });
+    const perfiles = await res.json();
+    const perfil = perfiles[0];
+
+    if(perfil){
+      const u = { ...perfil, correo: data.user.email };
+      setUsuario(u);
+      lsSet("dcs_session", u);
+      const initV = u.rol==="conserje"?"nuevoReporte":u.rol==="tecnico"?"misOrdenes":"dashboard";
+      lsSet("dcs_vista", initV);
+      setVista(initV);
+    } else {
+      setLoginError("Usuario no tiene perfil configurado.");
+    }
   }
   function logout(){setUsuario(null);lsSet("dcs_session",null);lsSet("dcs_vista","");setVista("dashboard");setSelOrden(null);}
 
@@ -2940,10 +2967,24 @@ export default function App() {
                   <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8}}>
                     <EstadoBadge estado={selOrden.estado}/>
                     {(usuario.rol==="admin"||usuario.rol==="ingeniera") && (
-                    <button style={{...s.btnSecondary,padding:"6px 12px",fontSize:11}}
-                      onClick={()=>generarPDF(selOrden)}>
-                      📄 Exportar PDF
-                    </button>
+                      <button style={{...s.btnSecondary,padding:"6px 12px",fontSize:11}}
+                        onClick={()=>generarPDF(selOrden)}>
+                        📄 Exportar PDF
+                      </button>
+                    )}
+                    {/* Técnico — "Marcar en proceso" solo si está Pendiente */}
+                    {usuario.rol==="tecnico" && selOrden.estado==="Pendiente" && (
+                      <button
+                        onClick={()=>actualizarOrden(selOrden.id,{estado:"En proceso"},`Estado → En proceso`)}
+                        style={{
+                          padding:"6px 14px",borderRadius:6,fontSize:11,fontWeight:600,
+                          fontFamily:"'IBM Plex Sans',sans-serif",cursor:"pointer",
+                          border:`1px solid ${ESTADO_CONFIG["En proceso"].dot}`,
+                          background:"transparent",
+                          color:T.textSecondary,
+                        }}>
+                        Marcar en proceso
+                      </button>
                     )}
                   </div>
                 </div>
@@ -3040,7 +3081,9 @@ export default function App() {
                       <div key={tipo}>
                         <div style={{fontSize:10,fontWeight:600,color:T.textTertiary,textTransform:"uppercase",letterSpacing:"0.7px",marginBottom:8}}>{lbl}</div>
                         {src
-                          ? <img src={src} alt="" style={{width:"100%",height:150,objectFit:"cover",borderRadius:8,border:`2px solid ${tipo==="resuelto"?T.successBase:T.dangerBase}`}}/>
+                          ? <img src={src} alt=""
+                              onClick={()=>setFotoModal({src,titulo:lbl})}
+                              style={{width:"100%",height:150,objectFit:"cover",borderRadius:8,border:`2px solid ${tipo==="resuelto"?T.successBase:T.dangerBase}`,cursor:"zoom-in"}}/>
                           : <div style={{width:"100%",height:150,borderRadius:8,border:`1px dashed ${T.borderSubtle}`,background:T.surfaceSecond,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:T.textTertiary,gap:6}}>
                               <span style={{fontSize:16}}>📷</span>
                               {tipo==="resuelto"?"El técnico subirá la evidencia":"Sin foto del daño"}
@@ -3056,21 +3099,27 @@ export default function App() {
               {usuario.rol==="tecnico" && (selOrden.foto_dano||fotos[selOrden.id]?.dano) && (
                 <div style={s.card}>
                   <div style={s.secTitle}>📷 Foto del daño reportado</div>
-                  <img src={selOrden.foto_dano||fotos[selOrden.id]?.dano} alt="" style={{width:"100%",maxHeight:220,objectFit:"cover",borderRadius:8,border:`2px solid ${T.dangerBase}`,marginTop:6}}/>
+                  <img
+                    src={selOrden.foto_dano||fotos[selOrden.id]?.dano} alt=""
+                    onClick={()=>setFotoModal({src:selOrden.foto_dano||fotos[selOrden.id]?.dano,titulo:"Foto del daño reportado"})}
+                    style={{width:"100%",maxHeight:220,objectFit:"cover",borderRadius:8,border:`2px solid ${T.dangerBase}`,marginTop:6,cursor:"zoom-in"}}
+                  />
                   {selOrden.descripcion && <p style={{fontSize:12,color:T.textSecondary,marginTop:10,lineHeight:1.6}}><strong>Descripción:</strong> {selOrden.descripcion}</p>}
                 </div>
               )}
 
-              {/* Acciones técnico */}
+              {/* Acciones técnico — solo foto upload */}
               {usuario.rol==="tecnico" && selOrden.estado!=="En revisión"&&selOrden.estado!=="Cerrado" && (
                 <div style={{...s.card,border:`1px solid ${T.borderStrong}`}}>
-                  <div style={s.secTitle}>Actualizar estado</div>
+                  <div style={s.secTitle}>📷 Evidencia del trabajo</div>
                   {/* Foto trabajo realizado */}
                   <div style={{marginBottom:14}}>
                     <div style={{fontSize:11,fontWeight:600,color:T.textSecondary,marginBottom:6}}>📷 Foto del trabajo realizado</div>
                     {fotos[selOrden.id]?.resuelto
                       ? <div style={{position:"relative",display:"inline-block"}}>
-                          <img src={fotos[selOrden.id].resuelto} alt="" style={{width:"100%",maxWidth:280,height:160,objectFit:"cover",borderRadius:8,border:`2px solid ${T.successBase}`}}/>
+                          <img src={fotos[selOrden.id].resuelto} alt=""
+                          onClick={()=>setFotoModal({src:fotos[selOrden.id].resuelto,titulo:"Foto del trabajo realizado"})}
+                          style={{width:"100%",maxWidth:280,height:160,objectFit:"cover",borderRadius:8,border:`2px solid ${T.successBase}`,cursor:"zoom-in"}}/>
                           <div style={{position:"absolute",top:4,right:4,background:T.successBase,color:"#fff",borderRadius:4,padding:"2px 6px",fontSize:10,fontWeight:700}}>✓ Subida</div>
                         </div>
                       : <div style={{width:"100%",height:100,borderRadius:8,border:`2px dashed ${T.borderStrong}`,background:T.surfaceSecond,display:"flex",alignItems:"center",justifyContent:"center",gap:8,cursor:"pointer",fontSize:12,color:T.textTertiary}}>
@@ -3087,42 +3136,10 @@ export default function App() {
                       </label>
                     )}
                   </div>
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                    {["En proceso"].map(e=>{
-                      const cfg=ESTADO_CONFIG[e];
-                      const active=selOrden.estado===e;
-                      return (
-                        <button key={e} onClick={()=>actualizarOrden(selOrden.id,{estado:e},`Estado → ${e}`)} style={{
-                          padding:"8px 16px",borderRadius:6,fontSize:12,fontWeight:600,
-                          fontFamily:"'IBM Plex Sans',sans-serif",
-                          border:`1px solid ${active?cfg.dot:T.borderDefault}`,
-                          background:active?cfg.bg:T.surfaceSecond,
-                          color:active?cfg.text:T.textSecondary,
-                          cursor:"pointer",
-                        }}>{e}</button>
-                      );
-                    })}
-                    <button
-                      onClick={()=>{
-                        if(!fotos[selOrden.id]?.resuelto){addToast("Sube una foto del trabajo antes de finalizar","warning");return;}
-                        actualizarOrden(selOrden.id,{estado:"Resuelto"},`Trabajo finalizado por ${usuario.nombre}`);
-                        pushNotif(`✅ Trabajo resuelto por ${usuario.nombre} — ${selOrden.ph||""}. Pendiente aprobación.`,"✅");
-                        addToast("¡Trabajo marcado como Resuelto! ✅","success");
-                        setTimeout(()=>navTo("asignacionesTerminadas"),800);
-                      }}
-                      style={{
-                        padding:"12px 24px",borderRadius:8,fontSize:13,fontWeight:700,
-                        fontFamily:"'IBM Plex Sans',sans-serif",
-                        border:"none",
-                        background:"linear-gradient(135deg,#16a34a,#15803d)",
-                        color:"#fff",cursor:"pointer",
-                        boxShadow:"0 3px 12px rgba(22,163,74,0.4)",
-                        width:"100%",letterSpacing:".3px",
-                      }}
-                    >✅ Trabajo Finalizado</button>
-                  </div>
+
                 </div>
               )}
+
               {/* Si ya está en revisión o cerrado, técnico ve estado */}
               {usuario.rol==="tecnico" && (selOrden.estado==="Resuelto"||selOrden.estado==="En revisión"||selOrden.estado==="Cerrado") && (
                 <div style={{...s.card,background:selOrden.estado==="Cerrado"?T.successMuted:T.accentMuted,border:`1px solid ${selOrden.estado==="Cerrado"?T.successBase:T.accentBorder}`}}>
@@ -3330,6 +3347,25 @@ export default function App() {
                 <div style={s.secTitle}>Notas internas</div>
                 <textarea key={selOrden.id} defaultValue={selOrden.notas} onBlur={e=>actualizarOrden(selOrden.id,{notas:e.target.value})} rows={3} placeholder="Observaciones internas (no aparecen en el PDF)..." style={s.textarea}/>
               </div>
+
+              {/* ── Trabajo Finalizado — después de Notas ── */}
+              <button
+                onClick={()=>{
+                  if(!fotos[selOrden.id]?.resuelto){addToast("Sube una foto del trabajo antes de finalizar","warning");return;}
+                  actualizarOrden(selOrden.id,{estado:"Resuelto"},`Trabajo finalizado por ${usuario.nombre}`);
+                  pushNotif(`✅ Trabajo resuelto por ${usuario.nombre} — ${selOrden.ph||""}. Pendiente aprobación.`,"✅");
+                  addToast("¡Trabajo marcado como Resuelto! ✅","success");
+                  setTimeout(()=>navTo("asignacionesTerminadas"),800);
+                }}
+                style={{
+                  width:"100%",padding:"14px",borderRadius:10,fontSize:14,fontWeight:700,
+                  fontFamily:"'IBM Plex Sans',sans-serif",border:"none",
+                  background:"linear-gradient(135deg,#16a34a,#15803d)",
+                  color:"#fff",cursor:"pointer",letterSpacing:".3px",
+                  boxShadow:"0 4px 14px rgba(22,163,74,0.4)",
+                }}>
+                ✅ Trabajo Finalizado
+              </button>
                 </>
               )}
             </div>
@@ -3597,11 +3633,30 @@ export default function App() {
                           <span style={{fontSize:28}}>📷</span>
                           <span style={{fontWeight:600}}>Toca para tomar o adjuntar foto</span>
                           <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
-                            onChange={e=>{
+                            onChange={async e=>{
                               const file=e.target.files[0]; if(!file) return;
+                              // Preview inmediato
                               const r=new FileReader();
                               r.onload=ev=>setFormRep(p=>({...p,foto:ev.target.result}));
                               r.readAsDataURL(file);
+                              // Subir a Supabase Storage
+                              if(dbOnline){
+                                try{
+                                  addToast("Subiendo foto...","info");
+                                  const ext=file.name.split(".").pop()||"jpg";
+                                  const path=`reportes/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+                                  const res=await fetch(`${SUPA_URL}/storage/v1/object/fotos-reportes/${path}`,{
+                                    method:"POST",
+                                    headers:{"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":file.type,"x-upsert":"true"},
+                                    body:file
+                                  });
+                                  if(res.ok){
+                                    const url=`${SUPA_URL}/storage/v1/object/public/fotos-reportes/${path}`;
+                                    setFormRep(p=>({...p,foto:url}));
+                                    addToast("Foto guardada en la nube ✓","success");
+                                  }
+                                }catch(err){ console.error(err); }
+                              }
                             }}/>
                         </label>
                       ) : (
@@ -4167,12 +4222,30 @@ export default function App() {
                       <span style={{fontSize:24}}>📷</span>
                       <span>Adjuntar foto</span>
                       <input type="file" accept="image/*" capture="environment" style={{display:"none"}}
-                        onChange={e=>{
-                          const file = e.target.files[0];
-                          if(!file) return;
-                          const reader = new FileReader();
-                          reader.onload = ev => setFormInc(p=>({...p,foto:ev.target.result}));
+                        onChange={async e=>{
+                          const file=e.target.files[0]; if(!file) return;
+                          // Preview inmediato
+                          const reader=new FileReader();
+                          reader.onload=ev=>setFormInc(p=>({...p,foto:ev.target.result}));
                           reader.readAsDataURL(file);
+                          // Subir a Supabase Storage
+                          if(dbOnline){
+                            try{
+                              addToast("Subiendo foto...","info");
+                              const ext=file.name.split(".").pop()||"jpg";
+                              const path=`incidencias/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+                              const res=await fetch(`${SUPA_URL}/storage/v1/object/fotos-incidencias/${path}`,{
+                                method:"POST",
+                                headers:{"Authorization":`Bearer ${SUPA_KEY}`,"Content-Type":file.type,"x-upsert":"true"},
+                                body:file
+                              });
+                              if(res.ok){
+                                const url=`${SUPA_URL}/storage/v1/object/public/fotos-incidencias/${path}`;
+                                setFormInc(p=>({...p,foto:url}));
+                                addToast("Foto guardada en la nube ✓","success");
+                              }
+                            }catch(err){ console.error(err); }
+                          }
                         }}/>                    </label>
                   ) : (
                     <div style={{position:"relative"}}>
@@ -5563,6 +5636,80 @@ export default function App() {
                     <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${m.ph}</td>
                   </tr>`).join("") : `<tr><td colspan="4" style="padding:12px;text-align:center;color:#94a3b8;font-size:12px">Sin materiales registrados este mes</td></tr>`;
 
+                // Variables alias
+                const rowsPH = rowsOrdenesPorPH;
+                const tasaResolucion = ordenesDelMes.length>0 ? Math.round((resueltas.length/ordenesDelMes.length)*100) : 0;
+                const mesLabel = MESES[mesRM];
+
+                // Pre-build conditional sections (avoid nested template literals)
+                const secTecnicos = rowsTecnicos ? `
+  <div class="section">
+    <div class="sec-header"><div class="sec-icon" style="background:#eff6ff">👷</div>
+      <div><div class="sec-title">Actividades por Técnico</div>
+      <div class="sec-subtitle">Desempeño del equipo durante ${mesLabel} ${anioRM}</div></div>
+    </div>
+    <table><thead><tr><th>Técnico</th><th style="text-align:center">Total</th>
+      <th style="text-align:center">Completadas</th><th style="text-align:center">En Proceso</th>
+      <th style="text-align:center">Pendientes</th><th style="text-align:center">Eficiencia</th>
+    </tr></thead><tbody>${rowsTecnicos}</tbody></table>
+  </div>` : "";
+
+                const secBitacora = reportesDelMes.length>0 ? `
+  <div class="section">
+    <div class="sec-header"><div class="sec-icon" style="background:#fdf4ff">📋</div>
+      <div><div class="sec-title">Bitácora de Conserjes</div>
+      <div class="sec-subtitle">${reportesDelMes.length} entradas en ${mesLabel}</div></div>
+    </div>
+    <table><thead><tr><th>Conserje</th><th>PH</th><th>Fecha</th><th>Turno</th><th style="text-align:center">Incidente</th></tr></thead>
+    <tbody>${reportesDelMes.map(r=>`<tr>
+      <td style="font-weight:600">${r.conserje||"—"}</td>
+      <td>${r.ph}</td><td>${r.fecha}</td><td>${r.turno||"—"}</td>
+      <td style="text-align:center">${r.huboIncidente||r.novedad?'<span style="background:#fee2e2;color:#be123c;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">⚠ Sí</span>':'<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">No</span>'}</td>
+    </tr>`).join("")}
+    </tbody></table>
+  </div>` : "";
+
+                const secCriticas = criticas.length>0 ? `
+  <div class="section">
+    <div class="sec-header"><div class="sec-icon" style="background:#fff1f2">🚨</div>
+      <div><div class="sec-title">Órdenes que Requieren Atención</div>
+      <div class="sec-subtitle">${criticas.length} elemento(s) crítico(s)</div></div>
+    </div>
+    <table><thead><tr><th>Tipo</th><th>PH</th><th>Ubicación</th><th style="text-align:center">Urgencia</th><th style="text-align:center">Estado</th></tr></thead>
+    <tbody>${criticas.map(o=>`<tr>
+      <td style="font-weight:600">${o.tipo}</td><td>${o.ph}</td>
+      <td style="color:#64748b;font-size:11px">${o.ubicacion||"—"}</td>
+      <td style="text-align:center"><span style="background:#fee2e2;color:#be123c;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700">${o.urgencia||"Normal"}</span></td>
+      <td style="text-align:center"><span style="background:#fef9c3;color:#92400e;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:700">${o.estado}</span></td>
+    </tr>`).join("")}
+    </tbody></table>
+  </div>` : "";
+
+                const secMateriales = materialesUsados.length>0 ? `
+  <div class="section">
+    <div class="sec-header"><div class="sec-icon" style="background:#f0fdf4">🔧</div>
+      <div><div class="sec-title">Materiales e Insumos Utilizados</div></div>
+    </div>
+    <table><thead><tr><th>Material</th><th style="text-align:center">Cantidad</th><th>Área</th><th>PH</th></tr></thead>
+    <tbody>${rowsMateriales}</tbody></table>
+  </div>` : "";
+
+                const secIncidencias = incidenciasDelMes.length>0 ? `
+  <div class="section">
+    <div class="sec-header"><div class="sec-icon" style="background:#fff7ed">🚧</div>
+      <div><div class="sec-title">Incidencias en Vía Pública</div>
+      <div class="sec-subtitle">${incidenciasDelMes.length} reportada(s)</div></div>
+    </div>
+    ${incidenciasDelMes.map(i=>`<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9">
+      <div style="width:8px;height:8px;border-radius:50%;background:#C9A84C;margin-top:5px;flex-shrink:0"></div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">${i.tipo||i.descripcion||"Incidencia"}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:2px">${i.ph||""} · ${i.fecha||""}</div>
+      </div>
+      <span style="background:${i.estado==="Resuelto"?"#dcfce7":"#fef9c3"};color:${i.estado==="Resuelto"?"#15803d":"#92400e"};padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700">${i.estado||"Pendiente"}</span>
+    </div>`).join("")}
+  </div>` : "";
+
                 const notasHTML = notaRM.trim() ? `
                   <div style="margin-top:32px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px 24px">
                     <div style="font-size:11px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">📝 Observaciones y notas adicionales</div>
@@ -5808,26 +5955,7 @@ export default function App() {
   </div>
 
   <!-- ASIGNACIONES POR TÉCNICO -->
-  ${rowsTecnicos !== "" ? `
-  <div class="section">
-    <div class="sec-header">
-      <div class="sec-icon" style="background:#eff6ff">👷</div>
-      <div>
-        <div class="sec-title">Actividades por Técnico</div>
-        <div class="sec-subtitle">Desempeño del equipo durante ${MESES[mesRM]}</div>
-      </div>
-    </div>
-    <table>
-      <thead><tr>
-        <th>Técnico</th><th style="text-align:center">Total</th>
-        <th style="text-align:center">Completadas</th>
-        <th style="text-align:center">En Proceso</th>
-        <th style="text-align:center">Pendientes</th>
-        <th style="text-align:center">Eficiencia</th>
-      </tr></thead>
-      <tbody>${rowsTecnicos}</tbody>
-    </table>
-  </div>` : ""}
+  ${secTecnicos}
 
   <!-- ASIGNACIONES POR PH -->
   <div class="section">
@@ -5850,96 +5978,16 @@ export default function App() {
   </div>
 
   <!-- BITÁCORA CONSERJES -->
-  ${reportesDelMes.length>0 ? `
-  <div class="section">
-    <div class="sec-header">
-      <div class="sec-icon" style="background:#fdf4ff">📋</div>
-      <div>
-        <div class="sec-title">Bitácora de Conserjes</div>
-        <div class="sec-subtitle">${reportesDelMes.length} entradas registradas en ${MESES[mesRM]}</div>
-      </div>
-    </div>
-    <table>
-      <thead><tr>
-        <th>Conserje</th><th>PH</th><th>Fecha</th><th>Turno</th><th style="text-align:center">Incidente</th>
-      </tr></thead>
-      <tbody>
-        ${reportesDelMes.map(r=>`<tr>
-          <td style="font-weight:600">${r.conserje||"—"}</td>
-          <td>${r.ph}</td>
-          <td>${r.fecha}</td>
-          <td>${r.turno||"—"}</td>
-          <td style="text-align:center">${r.huboIncidente||r.novedad?'<span class="badge badge-red">⚠ Sí</span>':'<span class="badge badge-green">No</span>'}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>` : ""}
+  ${secBitacora}
 
   <!-- ÓRDENES CRÍTICAS -->
-  ${criticas.length>0 ? `
-  <div class="section">
-    <div class="sec-header">
-      <div class="sec-icon" style="background:#fff1f2">🚨</div>
-      <div>
-        <div class="sec-title">Órdenes que Requieren Atención</div>
-        <div class="sec-subtitle">${criticas.length} elemento${criticas.length!==1?"s":""} crítico${criticas.length!==1?"s":""} identificado${criticas.length!==1?"s":""}</div>
-      </div>
-    </div>
-    <table>
-      <thead><tr>
-        <th>Tipo</th><th>PH</th><th>Ubicación</th>
-        <th style="text-align:center">Urgencia</th><th style="text-align:center">Estado</th>
-      </tr></thead>
-      <tbody>
-        ${criticas.map(o=>`<tr>
-          <td style="font-weight:600">${o.tipo}</td>
-          <td>${o.ph}</td>
-          <td style="color:#64748b;font-size:11px">${o.ubicacion||"—"}</td>
-          <td style="text-align:center"><span class="badge badge-red">${o.urgencia||"Normal"}</span></td>
-          <td style="text-align:center"><span class="badge badge-yellow">${o.estado}</span></td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>` : ""}
+  ${secCriticas}
 
   <!-- MATERIALES -->
-  ${materialesUsados.length>0 ? `
-  <div class="section">
-    <div class="sec-header">
-      <div class="sec-icon" style="background:#f0fdf4">🔧</div>
-      <div>
-        <div class="sec-title">Materiales e Insumos Utilizados</div>
-        <div class="sec-subtitle">Registro de materiales del mes</div>
-      </div>
-    </div>
-    <table>
-      <thead><tr>
-        <th>Material</th><th style="text-align:center">Cantidad</th><th>Área</th><th>PH</th>
-      </tr></thead>
-      <tbody>${rowsMateriales}</tbody>
-    </table>
-  </div>` : ""}
+  ${secMateriales}
 
   <!-- INCIDENCIAS DE CALLE -->
-  ${incidenciasDelMes.length>0 ? `
-  <div class="section">
-    <div class="sec-header">
-      <div class="sec-icon" style="background:#fff7ed">🚧</div>
-      <div>
-        <div class="sec-title">Incidencias en Vía Pública</div>
-        <div class="sec-subtitle">${incidenciasDelMes.length} incidencia${incidenciasDelMes.length!==1?"s":""} reportada${incidenciasDelMes.length!==1?"s":""}</div>
-      </div>
-    </div>
-    ${incidenciasDelMes.map(i=>`
-      <div class="incident-row">
-        <div class="incident-dot"></div>
-        <div style="flex:1">
-          <div style="font-size:12px;font-weight:600;color:#0D1726">${i.tipo||i.descripcion?.slice(0,50)||"Incidencia"}</div>
-          <div style="font-size:11px;color:#64748b;margin-top:2px">${i.ph||""} · ${i.fecha||""} · ${i.ubicacion||""}</div>
-        </div>
-        <span class="badge ${i.estado==="Resuelto"?"badge-green":"badge-yellow"}">${i.estado||"Pendiente"}</span>
-      </div>`).join("")}
-  </div>` : ""}
+  ${secIncidencias}
 
   ${notasHTML}
 
