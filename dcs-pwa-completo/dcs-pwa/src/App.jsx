@@ -1118,7 +1118,7 @@ export default function App() {
     if(!formCons.nombre||!formCons.pass||!formCons.correo)return addToast("Completa todos los campos.","warning");
     addToast("Creando usuario...","info");
     try {
-      const res = await fetch("/.netlify/functions/crear-usuario", {
+      const res = await fetch("/api/crear-usuario", {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({
