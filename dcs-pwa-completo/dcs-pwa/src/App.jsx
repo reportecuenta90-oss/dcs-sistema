@@ -83,39 +83,15 @@ const ESTADO_CONFIG = {
   "Cerrado":    { bg:"#F0FDF4", text:"#15803D", dot:"#22C55E", border:"#BBF7D0" },
 };
 
-const USUARIOS = [
-  { id:1, nombre:"Admin DC&S",        rol:"admin",     pass:"1234", correo:"admin@dcs.com" },
-  { id:2, nombre:"Carlos Técnico",    rol:"tecnico",   pass:"1234", correo:"carlos@dcs.com" },
-  { id:3, nombre:"Ing. Mitche Pérez", rol:"ingeniera", pass:"1234", correo:"mitche@dcs.com" },
-  { id:4, nombre:"Pedro Conserje",    rol:"conserje",  pass:"1234", correo:"pedro@dcs.com", ph:"PH Los Portales" },
-  { id:5, nombre:"Luis Conserje",     rol:"conserje",  pass:"1234", correo:"luis@dcs.com",  ph:"PH Velamar" },
-];
-const TECNICOS = USUARIOS.filter(u => u.rol === "tecnico");
+// usuarios se cargan desde Supabase Auth + profiles
 
-const grafData = [
-  {mes:"Oct",ordenes:4,cerradas:3},{mes:"Nov",ordenes:6,cerradas:4},
-  {mes:"Dic",ordenes:5,cerradas:5},{mes:"Ene",ordenes:8,cerradas:6},
-  {mes:"Feb",ordenes:7,cerradas:5},{mes:"Mar",ordenes:9,cerradas:7},
-];
+// grafData se calcula dinámicamente desde las órdenes reales
 
-const initOrdenes = [
-  { id:1, tipo:"Prueba de Pararrayos", ph:"PH Los Portales", ubicacion:"Desde PB hasta techo", fecha:"2026-02-06", estado:"Resuelto", asignadoA:2, aprobado:false, notas:"Instalación completa.", descripcionTrabajo:"Se procedió con la instalación del sistema de pararrayos desde la caja de prueba hasta el techo. Se utilizó un boom lift de 60' para poder realizar la instalación de la parte alta del sistema. Se instaló un pararrayos de cebado de 35 metros de radio de cobertura.", conclusiones:"El sistema de pararrayos fue instalado correctamente conforme a la Normativa NFPA 780. Las mediciones obtenidas cumplen con los valores requeridos (≤25Ω).", mediciones:[{punto:"Punto 1",esperado:"≤25Ω",actual:"16.1Ω",cumple:true},{punto:"Punto 2",esperado:"≤25Ω",actual:"0.80Ω",cumple:true}], materiales:[{material:"Copperweld",diametro:"19",longitud:"2.4",tipoInst:"Vertical",calibre:"2/0 AWG",hebras:"19",diametroCable:"10.7mm",tipo:"Cu"}], insumos:[{area:"Desde PB hasta techo",descripcion:"Pararrayos de cebado, conector de bronce, soportes de pared (2), tubo rígido 1-1/2\", tubos PVC 1-1/2\", cable 2/0 AWG, manguito de bronce."}], checklist:[{item:"Inspección visual",cumple:true},{item:"Continuidad eléctrica",cumple:true},{item:"Medición ≤25Ω",cumple:true},{item:"Correcta instalación",cumple:true}], historial:[{fecha:"2026-02-06 09:00",usuario:"Admin DC&S",accion:"Orden creada"},{fecha:"2026-02-06 14:00",usuario:"Carlos Técnico",accion:"Estado → En proceso"},{fecha:"2026-02-06 17:30",usuario:"Carlos Técnico",accion:"Estado → Resuelto"}] },
-  { id:2, tipo:"Plomería", ph:"PH Velamar", ubicacion:"Baño comunal PB", fecha:"2026-03-01", estado:"Pendiente", asignadoA:null, aprobado:false, notas:"", descripcionTrabajo:"", conclusiones:"", mediciones:[], materiales:[], insumos:[], checklist:[], historial:[{fecha:"2026-03-01 08:00",usuario:"Admin DC&S",accion:"Orden creada"}] },
-  { id:3, tipo:"Inspección Eléctrica", ph:"PH Fairways", ubicacion:"Tablero principal", fecha:"2026-03-02", estado:"En proceso", asignadoA:2, aprobado:false, notas:"", descripcionTrabajo:"", conclusiones:"", mediciones:[], materiales:[], insumos:[], checklist:[], historial:[{fecha:"2026-03-02 09:00",usuario:"Admin DC&S",accion:"Orden creada"},{fecha:"2026-03-02 11:00",usuario:"Carlos Técnico",accion:"Estado → En proceso"}] },
-  { id:4, tipo:"Aire Acondicionado", ph:"PH Laguna", ubicacion:"Área común piso 3", fecha:"2026-03-03", estado:"Cerrado", asignadoA:2, aprobado:true, notas:"Completado.", descripcionTrabajo:"", conclusiones:"", mediciones:[], materiales:[], insumos:[], checklist:[], historial:[{fecha:"2026-03-03 08:00",usuario:"Admin DC&S",accion:"Orden creada"},{fecha:"2026-03-03 16:00",usuario:"Ing. Mitche Pérez",accion:"Orden aprobada y cerrada"}] },
-];
-
+const initOrdenes = [];
 const AREAS_EDIFICIO = ["Lobby / Recepción","Parqueo","Piscina / Área recreativa","Gimnasio","Salón comunal","Cuarto de máquinas","Azotea / Techo","Jardines","Pasillos / Escaleras","Ascensor","Área de basura","Generador","Otro"];
 const URGENCIAS = ["Normal","Urgente","Emergencia"];
-
-const initReportes = [
-  { id:1, ph:"PH Los Portales", conserje:"Pedro Conserje", fecha:"2026-03-04", hora:"08:00", area:"Lobby / Recepción", urgencia:"Normal", observacion:"Todo normal. Áreas comunes revisadas sin novedades. Piscina limpia, gimnasio operativo.", novedad:false, foto:null },
-  { id:2, ph:"PH Los Portales", conserje:"Pedro Conserje", fecha:"2026-03-03", hora:"14:00", area:"Cuarto de máquinas", urgencia:"Urgente", observacion:"Ingresó técnico para revisión de bomba. Se detectó vibración inusual en bomba principal. Se recomienda revisión urgente.", novedad:true, foto:null },
-];
-
-const initRepIng = [
-  { id:1, tipo:"Inspección General", ph:"PH Los Portales", fecha:"2026-02-06", descripcion:"Sistema de pararrayos verificado. Todo en orden.", estado:"Aprobado" },
-];
+const initReportes = [];
+const initRepIng = [];
 
 const MENU = {
   admin:    [{id:"dashboard",icon:"▦",label:"Dashboard"},{id:"calendario",icon:"📅",label:"Calendario"},{id:"phs",icon:"◈",label:"PHs"},{id:"ordenes",icon:"≡",label:"Asignaciones"},{id:"nueva",icon:"+",label:"Nueva Asignación"},{id:"conserjes",icon:"◎",label:"Conserjes"},{id:"reportesConserje",icon:"◉",label:"Bitácora de los Conserjes"},{id:"incidencias",icon:"⚑",label:"Incidencias Calle"},{id:"reporteCalle",icon:"🛣",label:"Reporte de Calle"},{id:"diarioCampo",icon:"📓",label:"Nuevo Diario"},{id:"misDiarios",icon:"📚",label:"Mis Diarios"},{id:"reporteMensual",icon:"📊",label:"Reporte Mensual"},{id:"seguimiento",icon:"⚠️",label:"Seguimiento"}],
@@ -408,7 +384,8 @@ export default function App() {
   const [novedadesHora,setNovedadesHora] = useState([]);
   const [nuevaNovedad,setNuevaNovedad]   = useState({hora:"",texto:""});
   const [formRepIng,setFormRepIng] = useState({tipo:TIPOS_REP_ING[0],ph:PHS[0],descripcion:"",hallazgos:"",recomendaciones:"",accionesTomadas:"",estado:"Pendiente",fotos:[],materiales:[]});
-  const [conserjes,setConserjes]   = useState(() => lsGet("dcs_conserjes", USUARIOS.filter(u=>u.rol==="conserje")));
+  const [conserjes,setConserjes]   = useState(() => lsGet("dcs_conserjes", []));
+  const [tecnicos,setTecnicos]     = useState(() => lsGet("dcs_tecnicos", []));
   // Sistema de mensajería
   const [mensajes,setMensajes]     = useState(() => lsGet("dcs_mensajes", []));
   const [formMsg,setFormMsg]       = useState({para:"todos",texto:""});
@@ -425,10 +402,7 @@ export default function App() {
   const [firmaDrawing,setFirmaDrawing] = useState(false);
   const firmaRef = useRef(null);
   const firmaLastPos = useRef(null);
-  const initIncidencias = [
-    {id:1, calle:"Calle 4ta (frente al mar)", tipo:"Daño en calzada / bache", descripcion:"Hay un bache grande frente a la entrada de lotes calle 4ta, peligroso para vehículos.", urgencia:"Urgente", fecha:"2026-03-04", hora:"07:30", autor:"Pedro Conserje", foto:null, estado:"Pendiente", comentarioAdmin:""},
-    {id:2, calle:"Avenida Principal Buenaventura", tipo:"Iluminación deficiente o dañada", descripcion:"Tres faroles apagados en la avenida principal entre la entrada y el club.", urgencia:"Normal", fecha:"2026-03-03", hora:"20:15", autor:"Luis Conserje", foto:null, estado:"En revisión", comentarioAdmin:"Se notificó a mantenimiento eléctrico."},
-  ];
+  const initIncidencias = [];
   const [incidencias,setIncidencias] = useState(() => lsGet("dcs_incidencias", initIncidencias));
   const [formInc,setFormInc]       = useState({calle:CALLES[0], tipo:TIPOS_INCIDENCIA[0], descripcion:"", urgencia:"Normal", foto:null});
   const [incCalleOtro,setIncCalleOtro] = useState("");
@@ -574,7 +548,7 @@ export default function App() {
     lsSet("dcs_dark", dark);
     async function cargarDatos() {
       try {
-        const [_ord, _rep, _repI, _inc, _msg, _dia, _cons] = await Promise.all([
+        const [_ord, _rep, _repI, _inc, _msg, _dia, _cons, _tec] = await Promise.all([
           supa.get("ordenes","order=id.desc"),
           supa.get("reportes","order=id.desc"),
           supa.get("reportes_ing","order=id.desc"),
@@ -582,6 +556,7 @@ export default function App() {
           supa.get("mensajes","order=id.desc"),
           supa.get("diarios","order=id.desc"),
           supa.get("usuarios","rol=eq.conserje&activo=eq.true"),
+          supa.get("usuarios","rol=eq.tecnico&activo=eq.true"),
         ]);
         if(_ord?.length)  { setOrdenes(_ord.map(dbToOrden));   lsSet("dcs_ordenes",_ord.map(dbToOrden)); }
         if(_rep?.length)  { setReportes(_rep.map(dbToReporte)); lsSet("dcs_reportes",_rep.map(dbToReporte)); }
@@ -590,6 +565,7 @@ export default function App() {
         if(_msg?.length)  { setMensajes(_msg.map(dbToMsg));     lsSet("dcs_mensajes",_msg.map(dbToMsg)); }
         if(_dia?.length)  { setDiarios(_dia.map(dbToDiario));   lsSet("dcs_diarios",_dia.map(dbToDiario)); }
         if(_cons?.length) { setConserjes(_cons.map(dbToUsuario)); lsSet("dcs_conserjes",_cons.map(dbToUsuario)); }
+        if(_tec?.length)  { setTecnicos(_tec.map(dbToUsuario));   lsSet("dcs_tecnicos",_tec.map(dbToUsuario)); }
         setDbOnline(true);
       } catch(e) {
         console.warn("Supabase no disponible, usando datos locales", e);
@@ -666,6 +642,7 @@ export default function App() {
   useEffect(()=>{ lsSet("dcs_repIng", repIng); },[repIng]);
   useEffect(()=>{ lsSet("dcs_fotos", fotos); },[fotos]);
   useEffect(()=>{ lsSet("dcs_conserjes", conserjes); },[conserjes]);
+  useEffect(()=>{ lsSet("dcs_tecnicos", tecnicos); },[tecnicos]);
   useEffect(()=>{ lsSet("dcs_mensajes", mensajes); },[mensajes]);
   useEffect(()=>{ lsSet("dcs_incidencias", incidencias); },[incidencias]);
   useEffect(()=>{ lsSet("dcs_diarios", diarios); },[diarios]);
@@ -755,6 +732,17 @@ export default function App() {
   };
 
   const misOrdenes = useMemo(()=>usuario?.rol==="tecnico"?ordenes.filter(o=>o.asignadoA===usuario.id):ordenes,[ordenes,usuario]);
+  const grafData = useMemo(()=>{
+    const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+    const hoy = new Date();
+    return Array.from({length:6},(_,i)=>{
+      const d = new Date(hoy.getFullYear(), hoy.getMonth()-5+i, 1);
+      const mes = meses[d.getMonth()];
+      const yr = d.getFullYear(); const mo = d.getMonth();
+      const del_mes = ordenes.filter(o=>{ if(!o.fecha) return false; const f=new Date(o.fecha); return f.getFullYear()===yr&&f.getMonth()===mo; });
+      return { mes, ordenes: del_mes.length, cerradas: del_mes.filter(o=>o.estado==="Cerrado"||o.estado==="Resuelto").length };
+    });
+  },[ordenes]);
   const ordenesFiltradas = useMemo(()=>misOrdenes
     .filter(o=>phFiltro==="Todos"||o.ph===phFiltro)
     .filter(o=>estadoFiltro==="Todos"||o.estado===estadoFiltro)
@@ -1126,14 +1114,29 @@ export default function App() {
     document.body.removeChild(a); URL.revokeObjectURL(url);
     addToast("📄 Descargado","success");
   }
-  function crearConserje(){
+  async function crearConserje(){
     if(!formCons.nombre||!formCons.pass||!formCons.correo)return addToast("Completa todos los campos.","warning");
-    const nuevo={id:crypto.randomUUID(),nombre:formCons.nombre,rol:"conserje",pass:formCons.pass,correo:formCons.correo,ph:formCons.ph};
-    setConserjes(p=>[...p,nuevo]);
-    setFormCons({nombre:"",ph:PHS[0],pass:"",correo:""});
-    addToast("Conserje creado");
-    if(dbOnline) {
-      supa.post("usuarios",{nombre:nuevo.nombre,correo:nuevo.correo,pass:nuevo.pass,rol:"conserje",ph:nuevo.ph,activo:true}).catch(()=>{});
+    addToast("Creando usuario...","info");
+    try {
+      const res = await fetch("/.netlify/functions/crear-usuario", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          nombre: formCons.nombre,
+          correo: formCons.correo,
+          pass: formCons.pass,
+          rol: "conserje",
+          ph: formCons.ph
+        })
+      });
+      const data = await res.json();
+      if(!res.ok) return addToast(data.error||"Error al crear usuario","error");
+      const nuevo={id:data.id,nombre:formCons.nombre,rol:"conserje",correo:formCons.correo,ph:formCons.ph,activo:true};
+      setConserjes(p=>[...p,nuevo]);
+      setFormCons({nombre:"",ph:PHS[0],pass:"",correo:""});
+      addToast("✅ Conserje creado y registrado en el sistema");
+    } catch(e) {
+      addToast("Error de conexión","error");
     }
   }
 
@@ -1194,7 +1197,7 @@ export default function App() {
     const phsEnOrdenes = [...new Set(ords.map(o=>o.ph))];
 
     const filaOrden = o => {
-      const tec = TECNICOS.find(t=>t.id===o.asignadoA);
+      const tec = tecnicos.find(t=>t.id===o.asignadoA);
       const colEst = {Pendiente:"#F97316",["En proceso"]:"#3B82F6",Resuelto:"#16A34A",Cerrado:"#22C55E"}[o.estado]||"#6b7280";
       return `<tr>
         <td style="padding:7px 10px;border-bottom:1px solid #f0f0f0;font-size:11px;color:#374151">${o.fecha||"—"}</td>
@@ -1416,7 +1419,7 @@ export default function App() {
     const rows = [
       ["ID","Tipo","PH","Estado","Asignado","Fecha","Ubicación","Notas"],
       ...ordenesLista.map(o=>{
-        const tec = TECNICOS.find(t=>t.id===o.asignadoA);
+        const tec = tecnicos.find(t=>t.id===o.asignadoA);
         return [o.id,o.tipo,o.ph,o.estado,tec?tec.nombre:"Sin asignar",o.fecha||"",o.ubicacion||"",o.notas||""];
       })
     ];
@@ -1430,7 +1433,7 @@ export default function App() {
   }
 
     function generarPDF(orden) {
-    const tec = TECNICOS.find(t2=>t2.id===orden.asignadoA);
+    const tec = tecnicos.find(t2=>t2.id===orden.asignadoA);
     const fecha = orden.fecha ? new Date(orden.fecha+"T00:00:00") : new Date();
     const mes  = String(fecha.getMonth()+1).padStart(2,"0");
     const dia  = String(fecha.getDate()).padStart(2,"0");
@@ -2563,7 +2566,7 @@ export default function App() {
                 <select value={tecFiltro} onChange={e=>setTecFiltro(e.target.value)} style={{...s.select,width:"auto",padding:"5px 9px",fontSize:11}}>
                   <option value="Todos">Todos los técnicos</option>
                   <option value="null">Sin asignar</option>
-                  {TECNICOS.map(t2=><option key={t2.id} value={String(t2.id)}>{t2.nombre}</option>)}
+                  {tecnicos.map(t2=><option key={t2.id} value={String(t2.id)}>{t2.nombre}</option>)}
                 </select>
                 <input type="date" value={fechaDesde} onChange={e=>setFechaDesde(e.target.value)} style={{...s.input,width:"auto",padding:"5px 9px",fontSize:11}}/>
                 <span style={{fontSize:11,color:T.textTertiary}}>—</span>
@@ -2585,7 +2588,7 @@ export default function App() {
                     <div style={{textAlign:"center",padding:40,color:T.textTertiary,fontSize:12}}>No hay órdenes.</div>
                   )}
                   {ordenesFiltradas.map(o=>{
-                    const tec=TECNICOS.find(t2=>t2.id===o.asignadoA);
+                    const tec=tecnicos.find(t2=>t2.id===o.asignadoA);
                     return (
                       <div key={o.id} onClick={()=>{abrirOrden(o)}}
                         style={{background:T.surfacePrimary,borderRadius:8,padding:"12px 14px",
@@ -2616,7 +2619,7 @@ export default function App() {
                         <tr><td colSpan={5} style={{textAlign:"center",padding:40,color:T.textTertiary,fontSize:12}}>No hay órdenes.</td></tr>
                       )}
                       {ordenesFiltradas.map(o=>{
-                        const tec=TECNICOS.find(t2=>t2.id===o.asignadoA);
+                        const tec=tecnicos.find(t2=>t2.id===o.asignadoA);
                         return (
                           <tr key={o.id} style={{cursor:"pointer"}} onClick={()=>{abrirOrden(o)}}>
                             <td style={s.td}>
@@ -2710,7 +2713,7 @@ export default function App() {
                   <label style={s.label}>Asignar técnico</label>
                   <select value={formOrden.asignadoA} onChange={e=>setFormOrden({...formOrden,asignadoA:e.target.value})} style={s.select}>
                     <option value="">Sin asignar</option>
-                    {TECNICOS.map(t2=><option key={t2.id} value={t2.id}>{t2.nombre}</option>)}
+                    {tecnicos.map(t2=><option key={t2.id} value={t2.id}>{t2.nombre}</option>)}
                   </select>
                 </div>
 
@@ -2991,7 +2994,7 @@ export default function App() {
                 <div style={{display:"flex",flexDirection:"column",gap:6,fontSize:12,color:T.textSecondary}}>
                   <span>📍 {selOrden.ubicacion}</span>
                   <span style={{fontFamily:"'IBM Plex Mono',monospace",fontSize:11}}>📅 {selOrden.fecha}</span>
-                  {selOrden.asignadoA && <span>👷 {TECNICOS.find(t2=>t2.id===selOrden.asignadoA)?.nombre}</span>}
+                  {selOrden.asignadoA && <span>👷 {tecnicos.find(t2=>t2.id===selOrden.asignadoA)?.nombre}</span>}
                 </div>
               </div>
 
@@ -3176,11 +3179,11 @@ export default function App() {
                   <div style={s.secTitle}>Asignación de técnico</div>
                   <select
                     value={selOrden.asignadoA||""}
-                    onChange={e=>actualizarOrden(selOrden.id,{asignadoA:e.target.value?Number(e.target.value):null,realizadoPor:e.target.value?"":selOrden.realizadoPor},e.target.value?`Técnico asignado: ${TECNICOS.find(t2=>t2.id===Number(e.target.value))?.nombre}`:"Técnico removido")}
+                    onChange={e=>actualizarOrden(selOrden.id,{asignadoA:e.target.value?Number(e.target.value):null,realizadoPor:e.target.value?"":selOrden.realizadoPor},e.target.value?`Técnico asignado: ${tecnicos.find(t2=>t2.id===Number(e.target.value))?.nombre}`:"Técnico removido")}
                     style={s.select}
                   >
                     <option value="">Sin asignar</option>
-                    {TECNICOS.map(t2=><option key={t2.id} value={t2.id}>{t2.nombre}</option>)}
+                    {tecnicos.map(t2=><option key={t2.id} value={t2.id}>{t2.nombre}</option>)}
                   </select>
                   {!selOrden.asignadoA && (
                     <div style={{marginTop:10}}>
@@ -3194,9 +3197,9 @@ export default function App() {
                       />
                     </div>
                   )}
-                  {(selOrden.realizadoPor||TECNICOS.find(t=>t.id===selOrden.asignadoA)) && (
+                  {(selOrden.realizadoPor||tecnicos.find(t=>t.id===selOrden.asignadoA)) && (
                     <div style={{marginTop:8,fontSize:11,color:T.successText,fontWeight:600}}>
-                      👷 {selOrden.asignadoA ? TECNICOS.find(t=>t.id===selOrden.asignadoA)?.nombre : selOrden.realizadoPor}
+                      👷 {selOrden.asignadoA ? tecnicos.find(t=>t.id===selOrden.asignadoA)?.nombre : selOrden.realizadoPor}
                     </div>
                   )}
                 </div>
@@ -5520,7 +5523,7 @@ export default function App() {
             // Actividad por técnico
             const porTecnico = {};
             ordenesDelMes.forEach(o=>{
-              const tec = o.tecnico||TECNICOS.find(t=>t.id===o.asignadoA)?.nombre||"Sin asignar";
+              const tec = o.tecnico||tecnicos.find(t=>t.id===o.asignadoA)?.nombre||"Sin asignar";
               if(!porTecnico[tec]) porTecnico[tec]={total:0,resueltas:0};
               porTecnico[tec].total++;
               if(o.estado==="Resuelto"||o.estado==="Cerrado") porTecnico[tec].resueltas++;
@@ -5615,7 +5618,7 @@ export default function App() {
                     <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:10px">
                       <span style="padding:2px 8px;border-radius:10px;font-weight:700;background:${o.estado==="Resuelto"||o.estado==="Cerrado"?"#dcfce7":o.estado==="En proceso"?"#dbeafe":"#fef9c3"};color:${o.estado==="Resuelto"||o.estado==="Cerrado"?"#166534":o.estado==="En proceso"?"#1e40af":"#854d0e"}">${o.estado||"Pendiente"}</span>
                     </td>
-                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${o.tecnico||TECNICOS.find(t=>t.id===o.asignadoA)?.nombre||"—"}</td>
+                    <td style="padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:11px;color:#64748b">${o.tecnico||tecnicos.find(t=>t.id===o.asignadoA)?.nombre||"—"}</td>
                   </tr>`).join("");
 
                 const rowsIncidencias = incidenciasDelMes.slice(0,20).map(i=>`
@@ -6326,7 +6329,7 @@ export default function App() {
                       <div style={{display:"flex",flexDirection:"column",gap:8}}>
                         {diasSelDia.map(o=>{
                           const cfg = COLORES_ESTADO[o.estado]||COLORES_ESTADO["Pendiente"];
-                          const tec = TECNICOS.find(t=>t.id===o.asignadoA);
+                          const tec = tecnicos.find(t=>t.id===o.asignadoA);
                           return (
                             <div key={o.id} style={{
                               display:"flex",alignItems:"center",gap:12,
