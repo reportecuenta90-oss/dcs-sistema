@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
 // ── Supabase cliente ──────────────────────────────────────────────────────────
-export const SUPA_URL = "https://irldxqsbfczabbvdjnkg.supabase.co";
-export const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlybGR4cXNiZmN6YWJidmRqbmtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzk0NTgsImV4cCI6MjA4ODY1NTQ1OH0.OHghV0zicn6wIsOqcBuw3qu6pBTkBy5o50mXkSHTmb0";
+export const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
+export const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabaseAuth = createClient(SUPA_URL, SUPA_KEY);
 
