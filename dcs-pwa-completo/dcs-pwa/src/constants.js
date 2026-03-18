@@ -125,7 +125,6 @@ export const MENU = {
     { id: "diarioCampo",      icon: "📓", label: "Nuevo Diario" },
     { id: "misDiarios",       icon: "📚", label: "Mis Diarios" },
     { id: "reportes",         icon: "📊", label: "Reportes" },
-    { id: "reporteJunta",     icon: "🏛", label: "Reporte Junta Directiva" },
     { id: "seguimiento",      icon: "⚠️", label: "Seguimiento" },
   ],
   tecnico: [
@@ -146,7 +145,6 @@ export const MENU = {
     { id: "diarioCampo",      icon: "📓", label: "Nuevo Diario" },
     { id: "misDiarios",       icon: "📚", label: "Mis Diarios" },
     { id: "reportes",         icon: "📊", label: "Reportes" },
-    { id: "reporteJunta",     icon: "🏛", label: "Reporte Junta Directiva" },
     { id: "seguimiento",      icon: "⚠️", label: "Seguimiento" },
   ],
   conserje: [
