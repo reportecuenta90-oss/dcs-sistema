@@ -3,7 +3,7 @@ import { lsGet } from "./storage.js";
 import {
   PHS, TIPOS, TIPOS_REP_ING, AREAS_EDIFICIO,
   CALLES, TIPOS_INCIDENCIA,
-  initOrdenes, initReportes, initRepIng, initIncidencias
+  initOrdenes, initReportes, initRepIng, initIncidencias, initRecordatorios
 } from "./constants.js";
 
 // ── Crear contexto ─────────────────────────────────────────────────────────
@@ -28,6 +28,7 @@ export function DataProvider({ children }) {
   const [tecnicos, setTecnicos]   = useState(() => lsGet("dcs_tecnicos", []));
   const [mensajes, setMensajes]   = useState(() => lsGet("dcs_mensajes", []));
   const [incidencias, setIncidencias] = useState(() => lsGet("dcs_incidencias", initIncidencias));
+  const [recordatorios, setRecordatorios] = useState(() => lsGet("dcs_recordatorios", initRecordatorios));
   const [diarios, setDiarios]     = useState(() => lsGet("dcs_diarios", []));
   const [notifs, setNotifs]       = useState(() => lsGet("dcs_notifs", [
     { id: 1, msg: "Nueva orden pendiente en PH Vista Verde", time: "hace 5 min", icon: "📋", read: false },
@@ -94,6 +95,8 @@ export function DataProvider({ children }) {
   const [anioRM, setAnioRM]           = useState(() => new Date().getFullYear());
   const [notaRM, setNotaRM]           = useState("");
   const [generando, setGenerando]     = useState(false);
+  const [formRec, setFormRec]         = useState({ titulo: "", fecha: "", frecuencia: "Única", ph: PHS[0], nota: "" });
+  const [showFormRec, setShowFormRec] = useState(false);
   const [formDiario, setFormDiario]   = useState({
     fecha: new Date().toISOString().split("T")[0],
     horaInicio: "", horaFin: "",
@@ -116,6 +119,7 @@ export function DataProvider({ children }) {
       tecnicos, setTecnicos,
       mensajes, setMensajes,
       incidencias, setIncidencias,
+      recordatorios, setRecordatorios,
       diarios, setDiarios,
       notifs, setNotifs,
       selOrden, setSelOrden,
@@ -172,6 +176,8 @@ export function DataProvider({ children }) {
       anioRM, setAnioRM,
       notaRM, setNotaRM,
       generando, setGenerando,
+      formRec, setFormRec,
+      showFormRec, setShowFormRec,
       formDiario, setFormDiario,
       formBloque, setFormBloque,
       calMes, setCalMes,

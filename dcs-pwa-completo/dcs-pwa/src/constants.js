@@ -125,6 +125,7 @@ export const MENU = {
     { id: "diarioCampo",      icon: "📓", label: "Nuevo Diario" },
     { id: "misDiarios",       icon: "📚", label: "Mis Diarios" },
     { id: "reportes",         icon: "📊", label: "Reportes" },
+    { id: "reporteJunta",     icon: "🏛", label: "Reporte Junta Directiva" },
     { id: "seguimiento",      icon: "⚠️", label: "Seguimiento" },
   ],
   tecnico: [
@@ -145,6 +146,7 @@ export const MENU = {
     { id: "diarioCampo",      icon: "📓", label: "Nuevo Diario" },
     { id: "misDiarios",       icon: "📚", label: "Mis Diarios" },
     { id: "reportes",         icon: "📊", label: "Reportes" },
+    { id: "reporteJunta",     icon: "🏛", label: "Reporte Junta Directiva" },
     { id: "seguimiento",      icon: "⚠️", label: "Seguimiento" },
   ],
   conserje: [
@@ -164,7 +166,14 @@ export const ESTADO_CONFIG = {
 };
 
 // Estados iniciales vacíos
-export const initOrdenes   = [];
-export const initReportes  = [];
-export const initRepIng    = [];
-export const initIncidencias = [];
+export const initOrdenes       = [];
+export const initReportes      = [];
+export const initRepIng        = [];
+export const initIncidencias   = [];
+export const initRecordatorios = [];
+
+export const FRECUENCIAS = ["Única", "Semanal", "Mensual"];
+
+export const COLOR_RECORDATORIO = {
+  bg: "#F0F4FF", text: "#3730A3", border: "#6366F1", dot: "#6366F1"
+};
