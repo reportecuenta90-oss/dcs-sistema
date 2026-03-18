@@ -329,6 +329,25 @@ function AppInner() {
   }
   async function login(){
     setLoginError("");
+
+    // ── Límite de intentos fallidos (5 max, bloqueo 5 minutos) ───────────────
+    const LOCK_KEY = "dcs_login_lock";
+    const ATTEMPTS_KEY = "dcs_login_attempts";
+    const MAX_INTENTOS = 5;
+    const BLOQUEO_MS = 5 * 60 * 1000; // 5 minutos
+
+    const lockData = JSON.parse(localStorage.getItem(LOCK_KEY) || "null");
+    if (lockData) {
+      const tiempoRestante = Math.ceil((lockData.hasta - Date.now()) / 1000 / 60);
+      if (Date.now() < lockData.hasta) {
+        setLoginError(`Demasiados intentos fallidos. Intenta de nuevo en ${tiempoRestante} minuto${tiempoRestante !== 1 ? "s" : ""}.`);
+        return;
+      } else {
+        localStorage.removeItem(LOCK_KEY);
+        localStorage.removeItem(ATTEMPTS_KEY);
+      }
+    }
+
     try {
       // ── Timeout de 12s para el login ──────────────────────────────────────
       const authPromise = supabaseAuth.auth.signInWithPassword({
@@ -341,13 +360,28 @@ function AppInner() {
       const { data, error } = await Promise.race([authPromise, timeoutPromise]);
 
       if(error){
-        if(error.message?.includes("Invalid login") || error.message?.includes("invalid")) {
-          setLoginError("Correo o contraseña incorrectos.");
+        // Contar intento fallido
+        const intentos = parseInt(localStorage.getItem(ATTEMPTS_KEY) || "0") + 1;
+        localStorage.setItem(ATTEMPTS_KEY, intentos);
+
+        if (intentos >= MAX_INTENTOS) {
+          localStorage.setItem(LOCK_KEY, JSON.stringify({ hasta: Date.now() + BLOQUEO_MS }));
+          localStorage.removeItem(ATTEMPTS_KEY);
+          setLoginError("Demasiados intentos fallidos. Cuenta bloqueada por 5 minutos.");
         } else {
-          setLoginError("No se pudo conectar. Verifica tu internet e intenta de nuevo.");
+          const restantes = MAX_INTENTOS - intentos;
+          if(error.message?.includes("Invalid login") || error.message?.includes("invalid")) {
+            setLoginError(`Correo o contraseña incorrectos. ${restantes} intento${restantes !== 1 ? "s" : ""} restante${restantes !== 1 ? "s" : ""}.`);
+          } else {
+            setLoginError("No se pudo conectar. Verifica tu internet e intenta de nuevo.");
+          }
         }
         return;
       }
+
+      // Login exitoso — limpiar contadores
+      localStorage.removeItem(ATTEMPTS_KEY);
+      localStorage.removeItem(LOCK_KEY);
 
       const token = data.session.access_token;
       const res = await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${data.user.id}&select=*`, {
@@ -2130,19 +2164,30 @@ function AppInner() {
 
       {/* ── Idle Warning Modal ── */}
       {showIdleWarning && usuario && (
-        <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(0,0,0,0.6)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
-          <div style={{background:"#fff",borderRadius:16,padding:28,maxWidth:320,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
-            <div style={{fontSize:40,marginBottom:12}}>⏰</div>
-            <div style={{fontSize:16,fontWeight:700,color:"#111827",marginBottom:8}}>¿Sigues ahí?</div>
-            <div style={{fontSize:13,color:"#6B7280",marginBottom:20,lineHeight:1.5}}>
+        <div style={{position:"fixed",inset:0,zIndex:10000,background:"rgba(0,0,0,0.65)",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+          <div style={{background:T.surfacePrimary,borderRadius:16,padding:28,maxWidth:340,width:"100%",textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.4)",border:`1px solid ${T.borderDefault}`}}>
+            <div style={{fontSize:44,marginBottom:12}}>⏰</div>
+            <div style={{fontSize:16,fontWeight:800,color:T.textPrimary,marginBottom:8}}>¿Sigues ahí?</div>
+            <div style={{fontSize:13,color:T.textSecondary,marginBottom:8,lineHeight:1.6}}>
               Tu sesión se cerrará en <b style={{color:"#DC2626"}}>1 minuto</b> por inactividad.
             </div>
-            <button
-              onClick={()=>setShowIdleWarning(false)}
-              style={{background:"#2563EB",color:"#fff",border:"none",borderRadius:10,padding:"11px 28px",fontSize:14,fontWeight:700,cursor:"pointer",width:"100%"}}
-            >
-              Seguir conectado
-            </button>
+            <div style={{fontSize:11,color:T.textTertiary,marginBottom:20}}>
+              Sesión activa como <b style={{color:T.textPrimary}}>{usuario.nombre}</b>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button
+                onClick={()=>{ logout(); setShowIdleWarning(false); }}
+                style={{flex:1,background:"transparent",color:T.textSecondary,border:`1px solid ${T.borderDefault}`,borderRadius:10,padding:"10px",fontSize:13,fontWeight:600,cursor:"pointer"}}
+              >
+                Cerrar sesión
+              </button>
+              <button
+                onClick={()=>setShowIdleWarning(false)}
+                style={{flex:2,background:"#2563EB",color:"#fff",border:"none",borderRadius:10,padding:"10px",fontSize:13,fontWeight:700,cursor:"pointer"}}
+              >
+                ✓ Seguir conectado
+              </button>
+            </div>
           </div>
         </div>
       )}
