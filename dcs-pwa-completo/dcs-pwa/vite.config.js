@@ -39,6 +39,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/irldxqsbfczabbvdjnkg\.supabase\.co\/.*/i,
@@ -47,8 +50,9 @@ export default defineConfig({
               cacheName: 'supabase-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24
-              }
+                maxAgeSeconds: 60 * 60 * 2
+              },
+              networkTimeoutSeconds: 10,
             }
           }
         ]
