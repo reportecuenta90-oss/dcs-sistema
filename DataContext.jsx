@@ -76,6 +76,8 @@ export function DataProvider({ children }) {
   const [nuevaNovedad, setNuevaNovedad]   = useState({ hora: "", texto: "" });
   const [formRepIng, setFormRepIng]   = useState({ tipo: TIPOS_REP_ING[0], ph: PHS[0], descripcion: "", hallazgos: "", recomendaciones: "", accionesTomadas: "", estado: "Pendiente", fotos: [], materiales: [] });
   const [formCons, setFormCons]       = useState({ nombre: "", ph: PHS[0], pass: "", correo: "" });
+  const [formTec, setFormTec]         = useState({ nombre: "", correo: "", pass: "", telefono: "", especialidad: "Eléctrico" });
+  const [selTec, setSelTec]           = useState(null);
   const [notaCons, setNotaCons]       = useState("");
   const [firmaCanvas, setFirmaCanvas] = useState(null);
   const [firmaDrawing, setFirmaDrawing] = useState(false);
@@ -157,6 +159,8 @@ export function DataProvider({ children }) {
       nuevaNovedad, setNuevaNovedad,
       formRepIng, setFormRepIng,
       formCons, setFormCons,
+      formTec, setFormTec,
+      selTec, setSelTec,
       notaCons, setNotaCons,
       firmaCanvas, setFirmaCanvas,
       firmaDrawing, setFirmaDrawing,

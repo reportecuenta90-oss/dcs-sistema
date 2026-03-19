@@ -7,6 +7,7 @@ import { fs } from "./firebaseService.js";
 import {
   signInWithEmailAndPassword,
   signOut,
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
 import {
   ref as storageRef,
@@ -27,6 +28,7 @@ import AsignacionesTerminadas from "./AsignacionesTerminadas.jsx";
 import NuevaOrden             from "./NuevaOrden.jsx";
 import Ordenes                from "./Ordenes.jsx";
 import Conserjes              from "./Conserjes.jsx";
+import Tecnicos               from "./Tecnicos.jsx";
 import ReportesConserje       from "./ReportesConserje.jsx";
 import DetalleIncidencia      from "./DetalleIncidencia.jsx";
 import Seguimiento            from "./Seguimiento.jsx";
@@ -78,6 +80,7 @@ function AppInner() {
     notifs, setNotifs, selOrden, setSelOrden, selReporte, setSelReporte,
     selInc, setSelInc, selCons, setSelCons, diarioPreview, setDiarioPreview,
     diarioEditId, setDiarioEditId,
+    formTec, setFormTec, selTec, setSelTec,
     phFiltro, setPhFiltro, estadoFiltro, setEstado, tipoFiltro, setTipo,
     tecFiltro, setTecFiltro, fechaDesde, setFechaDesde, fechaHasta, setFechaHasta,
     calleRep, setCalleRep, urgRep, setUrgRep, estRep, setEstRep,
@@ -817,26 +820,57 @@ function AppInner() {
     addToast("📄 Descargado","success");
   }
   async function crearConserje(){
-    if(!formCons.nombre||!formCons.pass||!formCons.correo)return addToast("Completa todos los campos.","warning");
+    if(!formCons.nombre||!formCons.pass||!formCons.correo) return addToast("Completa todos los campos.","warning");
+    if(formCons.pass.length < 6) return addToast("La contraseña debe tener al menos 6 caracteres.","warning");
     addToast("Creando usuario...","info");
     try {
-      // Guardar perfil en Firestore (la autenticación se crea manualmente en Firebase Console
-      // o mediante una Cloud Function — por ahora guardamos el perfil)
+      // 1. Crear en Firebase Auth
+      const cred = await createUserWithEmailAndPassword(auth, formCons.correo, formCons.pass);
+      const uid  = cred.user.uid;
+
+      // 2. Guardar perfil en Firestore con el mismo uid
       const nuevo = {
-        nombre: formCons.nombre,
-        correo: formCons.correo,
-        pass: formCons.pass, // solo referencia, no se usa para auth real
-        rol: "conserje",
-        ph: formCons.ph,
-        activo: true,
+        nombre:  formCons.nombre,
+        correo:  formCons.correo,
+        rol:     "conserje",
+        ph:      formCons.ph,
+        activo:  true,
       };
-      const saved = await fs.post("usuarios", nuevo);
-      if (!saved) return addToast("Error al crear usuario", "error");
-      setConserjes(p=>[...p, { ...nuevo, id: saved.id }]);
-      setFormCons({nombre:"",ph:PHS[0],pass:"",correo:""});
-      addToast("✅ Conserje creado en el sistema");
+      await fs.patch("usuarios", uid, nuevo);
+
+      setConserjes(p => [...p, { ...nuevo, id: uid }]);
+      setFormCons({ nombre: "", ph: PHS[0], pass: "", correo: "" });
+      addToast("✅ Conserje creado — ya puede iniciar sesión");
     } catch(e) {
-      addToast("Error de conexión","error");
+      if(e.code === "auth/email-already-in-use") return addToast("Ese correo ya está registrado","error");
+      if(e.code === "auth/invalid-email")        return addToast("Correo inválido","error");
+      addToast("Error al crear usuario: " + e.message,"error");
+    }
+  }
+
+  async function crearTecnico(){
+    if(!formTec.nombre||!formTec.pass||!formTec.correo) return addToast("Completa nombre, correo y contraseña.","warning");
+    if(formTec.pass.length < 6) return addToast("La contraseña debe tener al menos 6 caracteres.","warning");
+    addToast("Creando técnico...","info");
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, formTec.correo, formTec.pass);
+      const uid  = cred.user.uid;
+      const nuevo = {
+        nombre:       formTec.nombre,
+        correo:       formTec.correo,
+        telefono:     formTec.telefono || "",
+        especialidad: formTec.especialidad || "General",
+        rol:          "tecnico",
+        activo:       true,
+      };
+      await fs.patch("usuarios", uid, nuevo);
+      setTecnicos(p => [...p, { ...nuevo, id: uid }]);
+      setFormTec({ nombre: "", correo: "", pass: "", telefono: "", especialidad: "Eléctrico" });
+      addToast("✅ Técnico creado — ya puede iniciar sesión");
+    } catch(e) {
+      if(e.code === "auth/email-already-in-use") return addToast("Ese correo ya está registrado","error");
+      if(e.code === "auth/invalid-email")        return addToast("Correo inválido","error");
+      addToast("Error al crear técnico: " + e.message,"error");
     }
   }
 
@@ -1405,12 +1439,12 @@ function AppInner() {
 
   // ── RUTAS PERMITIDAS POR ROL ─────────────────────────────────────────────
   const RUTAS_ROL = {
-    admin:     ["dashboard","calendario","phs","ordenes","nueva","conserjes","reportesConserje",
+    admin:     ["dashboard","calendario","phs","ordenes","nueva","conserjes","tecnicos","reportesConserje",
                 "incidencias","reporteCalle","diarioCampo","misDiarios","reporteMensual",
-                "seguimiento","detalle","detalleReporte","detalleIncidencia","reportes","reporteSemanal"],
-    ingeniera: ["dashboard","calendario","phs","ordenes","nueva","conserjes","reportesConserje",
+                "seguimiento","detalle","detalleReporte","detalleIncidencia","reportes","reporteSemanal","reporteJunta"],
+    ingeniera: ["dashboard","calendario","phs","ordenes","nueva","conserjes","tecnicos","reportesConserje",
                 "incidencias","reporteCalle","diarioCampo","misDiarios","reporteMensual",
-                "seguimiento","detalle","detalleReporte","detalleIncidencia","reportes","reporteSemanal"],
+                "seguimiento","detalle","detalleReporte","detalleIncidencia","reportes","reporteSemanal","reporteJunta"],
     tecnico:   ["misOrdenes","asignacionesTerminadas","incidencias","detalle","detalleIncidencia"],
     conserje:  ["nuevoReporte","reportesConserje","incidencias","misNotificaciones",
                 "detalleReporte","detalleIncidencia"],
@@ -1452,7 +1486,7 @@ function AppInner() {
     setFiltrosRep({urgencia:"Todos",fecha:""});
   }
 
-  const vistaLabel={dashboard:"Dashboard",phs:"PHs",ordenes:"Órdenes de Trabajo",misOrdenes:"Asignaciones",asignacionesTerminadas:"Asignaciones Terminadas",nueva:"Nueva Orden",conserjes:"Conserjes",reportesConserje: usuario?.rol==="conserje" ? "Bitácora" : "Bitácora de los Conserjes",detalle:"Detalle de la Asignación",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual",seguimiento:"Seguimiento"};
+  const vistaLabel={dashboard:"Dashboard",phs:"PHs",ordenes:"Órdenes de Trabajo",misOrdenes:"Asignaciones",asignacionesTerminadas:"Asignaciones Terminadas",nueva:"Nueva Orden",conserjes:"Conserjes",tecnicos:"Técnicos",reportesConserje: usuario?.rol==="conserje" ? "Bitácora" : "Bitácora de los Conserjes",detalle:"Detalle de la Asignación",detalleReporte:"Detalle de Reporte",incidencias:"Incidencias de Calle",detalleIncidencia:"Detalle de Incidencia",reporteCalle:"Reporte de Calle",diarioCampo:"Nuevo Diario de Campo",misDiarios:"Diarios de Campo",misNotificaciones:"Notificaciones",calendario:"Calendario de Órdenes",reporteMensual:"Reporte Mensual",seguimiento:"Seguimiento"};
   const hasAdv=tipoFiltro!=="Todos"||tecFiltro!=="Todos"||fechaDesde||fechaHasta;
 
   // ── LOADING DB ─────────────────────────────────────────────────────────────
@@ -2018,6 +2052,10 @@ function AppInner() {
               crearConserje={crearConserje} navTo={navTo}
               addToast={addToast} actualizarReporte={actualizarReporte}
             />
+          )}
+
+          {vista==="tecnicos" && (
+            <Tecnicos crearTecnico={crearTecnico} />
           )}
 
           {vista==="reportesConserje" && (

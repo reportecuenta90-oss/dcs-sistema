@@ -24,12 +24,12 @@ export function AppProvider({ children }) {
 
     // Rutas permitidas por rol — evita que localStorage manipulado dé acceso indebido
     const RUTAS_ROL = {
-      admin:     ["dashboard","calendario","phs","ordenes","nueva","conserjes","reportesConserje",
+      admin:     ["dashboard","calendario","phs","ordenes","nueva","conserjes","tecnicos","reportesConserje",
                   "incidencias","reporteCalle","diarioCampo","misDiarios","reporteMensual",
-                  "seguimiento","detalle","detalleReporte","detalleIncidencia","reportes","reporteSemanal"],
-      ingeniera: ["dashboard","calendario","phs","ordenes","nueva","conserjes","reportesConserje",
+                  "seguimiento","detalle","detalleReporte","detalleIncidencia","reportes","reporteSemanal","reporteJunta"],
+      ingeniera: ["dashboard","calendario","phs","ordenes","nueva","conserjes","tecnicos","reportesConserje",
                   "incidencias","reporteCalle","diarioCampo","misDiarios","reporteMensual",
-                  "seguimiento","detalle","detalleReporte","detalleIncidencia","reportes","reporteSemanal"],
+                  "seguimiento","detalle","detalleReporte","detalleIncidencia","reportes","reporteSemanal","reporteJunta"],
       tecnico:   ["misOrdenes","asignacionesTerminadas","incidencias","detalle","detalleIncidencia"],
       conserje:  ["nuevoReporte","reportesConserje","incidencias","misNotificaciones",
                   "detalleReporte","detalleIncidencia"],
