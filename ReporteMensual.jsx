@@ -1,14 +1,11 @@
 import { PHS } from "./constants.js";
 
-export default function ReporteMensual({
-  ordenes, reportes, incidencias, repIng,
-  tecnicos, usuario, isMobile,
-  mesRM, setMesRM, anioRM, setAnioRM,
-  notaRM, setNotaRM,
-  generando, setGenerando,
-  addToast, LOGO_B64,
-  T, s,
-}) {
+import { useApp } from "./AppContext";
+import { useData } from "./DataContext";
+
+export default function ReporteMensual({ addToast, LOGO_B64 }) {
+  const { T, s, usuario, isMobile } = useApp();
+  const { ordenes, reportes, incidencias, repIng, tecnicos, mesRM, setMesRM, anioRM, setAnioRM, notaRM, setNotaRM, generando, setGenerando } = useData();
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 // Filtrar datos del mes seleccionado
@@ -553,20 +550,14 @@ const generarPDF = async () => {
 
 </div>
 
-<script>window.onload=function(){window.print();}</script>
 </body></html>`;
 
-    // Descarga directa como HTML — confiable en todos los navegadores
-    const blob = new Blob([html], {type:"text/html;charset=utf-8"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.download = `Reporte-Mensual-${MESES[mesRM]}-${anioRM}.html`;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-    addToast("📄 Reporte descargado — ábrelo y usa Ctrl+P → Guardar como PDF","success");
+    // Abrir en ventana nueva y disparar impresión — igual que Reporte Semanal
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+    w.onload = () => { w.focus(); w.print(); };
+    addToast("✅ Reporte mensual generado", "success");
     setGenerando(false);
   })(); } catch(e){ console.error(e); setGenerando(false); }
 };

@@ -1,51 +1,96 @@
 import { createClient } from "@supabase/supabase-js";
 
 // ── Supabase cliente ──────────────────────────────────────────────────────────
-export const SUPA_URL = "https://irldxqsbfczabbvdjnkg.supabase.co";
-export const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlybGR4cXNiZmN6YWJidmRqbmtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNzk0NTgsImV4cCI6MjA4ODY1NTQ1OH0.OHghV0zicn6wIsOqcBuw3qu6pBTkBy5o50mXkSHTmb0";
+export const SUPA_URL = import.meta.env.VITE_SUPABASE_URL;
+export const SUPA_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabaseAuth = createClient(SUPA_URL, SUPA_KEY);
 
+// ── Timeout helper — si Supabase no responde en 10s, falla limpio ─────────────
+function conTimeout(promesa, ms = 10000) {
+  return Promise.race([
+    promesa,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Tiempo de espera agotado")), ms)
+    ),
+  ]);
+}
+
 export const supa = {
-  _h: { "Content-Type": "application/json", "apikey": SUPA_KEY, "Authorization": "Bearer " + SUPA_KEY },
+  _h: {
+    "Content-Type": "application/json",
+    "apikey": SUPA_KEY,
+    "Authorization": "Bearer " + SUPA_KEY,
+  },
 
   async get(table, params = "") {
-    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?${params}`, { headers: this._h });
-    return r.ok ? r.json() : [];
+    try {
+      const r = await conTimeout(
+        fetch(`${SUPA_URL}/rest/v1/${table}?${params}`, { headers: this._h })
+      );
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return await r.json();
+    } catch (e) {
+      console.warn(`[supa.get] ${table}:`, e.message);
+      return null; // null = fallo, [] = vacío pero OK
+    }
   },
 
   async post(table, body) {
-    const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
-      method: "POST",
-      headers: { ...this._h, "Prefer": "return=representation" },
-      body: JSON.stringify(body),
-    });
-    const d = await r.json();
-    return Array.isArray(d) ? d[0] : d;
+    try {
+      const r = await conTimeout(
+        fetch(`${SUPA_URL}/rest/v1/${table}`, {
+          method: "POST",
+          headers: { ...this._h, "Prefer": "return=representation" },
+          body: JSON.stringify(body),
+        })
+      );
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      return Array.isArray(d) ? d[0] : d;
+    } catch (e) {
+      console.warn(`[supa.post] ${table}:`, e.message);
+      return null;
+    }
   },
 
   async patch(table, id, body) {
-    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, {
-      method: "PATCH",
-      headers: { ...this._h, "Prefer": "return=representation" },
-      body: JSON.stringify(body),
-    });
-    const d = await r.json();
-    return Array.isArray(d) ? d[0] : d;
+    try {
+      const r = await conTimeout(
+        fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, {
+          method: "PATCH",
+          headers: { ...this._h, "Prefer": "return=representation" },
+          body: JSON.stringify(body),
+        })
+      );
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const d = await r.json();
+      return Array.isArray(d) ? d[0] : d;
+    } catch (e) {
+      console.warn(`[supa.patch] ${table}:`, e.message);
+      return null;
+    }
   },
 
   async delete(table, id) {
-    await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, {
-      method: "DELETE",
-      headers: this._h,
-    });
+    try {
+      const r = await conTimeout(
+        fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.${id}`, {
+          method: "DELETE",
+          headers: this._h,
+        })
+      );
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    } catch (e) {
+      console.warn(`[supa.delete] ${table}:`, e.message);
+    }
   },
 
-  // Polling cada 8s como alternativa a websockets en entorno web simple
+  // Polling cada 8s como alternativa a websockets
   sub(table, cb) {
     const iv = setInterval(async () => {
       const d = await this.get(table, "order=id.desc&limit=100");
-      cb(d);
+      if (d !== null) cb(d); // solo actualiza si la llamada fue exitosa
     }, 8000);
     return () => clearInterval(iv);
   },

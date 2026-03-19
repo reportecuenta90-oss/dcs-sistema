@@ -1,4 +1,7 @@
-export default function ThemeBtn({ dark, setDark }) {
+import { useApp } from "./AppContext";
+
+export default function ThemeBtn() {
+  const { dark, setDark } = useApp();
   return (
     <button
       onClick={() => setDark(!dark)}

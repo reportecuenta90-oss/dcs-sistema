@@ -2,13 +2,21 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { PHS, ESTADOS, ESTADO_CONFIG } from "./constants.js";
 import EstadoBadge from "./EstadoBadge.jsx";
 
-export default function Dashboard({
-  ordenes, reportes, diarios, usuario,
-  grafData, isMobile, abrirOrden, generarPDF,
-  generarReporteGeneral, exportarExcelOrdenes,
-  rGenPH, setRGenPH, rGenFD, setRGenFD, rGenFH, setRGenFH,
-  setVista, T, s,
-}) {
+import { useApp } from "./AppContext";
+import { useData } from "./DataContext";
+import { useMemo } from "react";
+
+export default function Dashboard({ abrirOrden, generarPDF, generarReporteGeneral, exportarExcelOrdenes }) {
+  const { T, s, usuario, isMobile, setVista } = useApp();
+  const { ordenes, reportes, diarios, rGenPH, setRGenPH, rGenFD, setRGenFD, rGenFH, setRGenFH } = useData();
+  const grafData = useMemo(() => {
+    const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+    return meses.map((m, i) => ({
+      mes: m,
+      ordenes: ordenes.filter(o => new Date(o.fecha).getMonth() === i).length,
+      reportes: reportes.filter(r => new Date(r.fecha).getMonth() === i).length,
+    }));
+  }, [ordenes, reportes]);
   const emergencias = reportes.filter(r => r.urgencia === "Emergencia" && !r.aprobadoPorIng);
   const pendsDiario = diarios.filter(d => d.pendientes && d.autor === usuario?.nombre);
   const ordenesUrg  = ordenes.filter(o => o.estado === "Pendiente");

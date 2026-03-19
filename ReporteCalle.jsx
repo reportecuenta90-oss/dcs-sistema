@@ -1,15 +1,11 @@
 import { CALLES, URGENCIAS } from "./constants.js";
 
-export default function ReporteCalle({
-  incidencias,
-  calleRep, setCalleRep,
-  urgRep, setUrgRep,
-  estRep, setEstRep,
-  fdRep, setFdRep,
-  fhRep, setFhRep,
-  setSelInc, navTo,
-  T, s,
-}) {
+import { useApp } from "./AppContext";
+import { useData } from "./DataContext";
+
+export default function ReporteCalle({ navTo }) {
+  const { T, s } = useApp();
+  const { incidencias, calleRep, setCalleRep, urgRep, setUrgRep, estRep, setEstRep, fdRep, setFdRep, fhRep, setFhRep, setSelInc } = useData();
   const lista = incidencias.filter(i => {
     if (calleRep !== "Todas" && i.calle !== calleRep) return false;
     if (urgRep !== "Todos" && i.urgencia !== urgRep) return false;

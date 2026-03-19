@@ -1,12 +1,11 @@
-export default function MisNotificaciones({
-  mensajes, notifs, setNotifs, usuario,
-  msgBusqCons, setMsgBusqCons,
-  respAbiertas, setRespAbiertas,
-  textosResp, setTextosResp,
-  setMensajes, addToast, pushNotif,
-  unread,
-  T, s,
-}) {
+import { useApp } from "./AppContext";
+import { useData } from "./DataContext";
+import { useMemo } from "react";
+
+export default function MisNotificaciones({ addToast, pushNotif }) {
+  const { T, s, usuario } = useApp();
+  const { mensajes, setMensajes, notifs, setNotifs, msgBusqCons, setMsgBusqCons, respAbiertas, setRespAbiertas, textosResp, setTextosResp } = useData();
+  const unread = useMemo(() => notifs.filter(n => !n.read).length, [notifs]);
   const misMensajes = mensajes.filter(m => m.para === usuario.nombre || m.para === "todos");
 
   const marcarLeidoMsg = (id) => setMensajes(p => p.map(m => m.id === id ? { ...m, leidoPor: [...(m.leidoPor || []), usuario.nombre] } : m));

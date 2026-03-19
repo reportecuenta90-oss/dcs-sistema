@@ -1,13 +1,12 @@
 import { ESTADO_CONFIG } from "./constants.js";
 import EstadoBadge from "./EstadoBadge.jsx";
 
-export default function DetalleOrden({
-  selOrden, tecnicos, usuario, fotos,
-  actualizarOrden, subirFoto, generarPDF,
-  setFotoModal, matForm, setMatForm,
-  addToast, pushNotif, navTo,
-  T, s,
-}) {
+import { useApp } from "./AppContext";
+import { useData } from "./DataContext";
+
+export default function DetalleOrden({ actualizarOrden, subirFoto, generarPDF, addToast, pushNotif, navTo }) {
+  const { T, s, usuario, setFotoModal } = useApp();
+  const { selOrden, tecnicos, fotos, matForm, setMatForm } = useData();
   return (
     <div style={{maxWidth:620,display:"flex",flexDirection:"column",gap:14}}>
 

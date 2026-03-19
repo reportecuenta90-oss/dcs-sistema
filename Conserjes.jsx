@@ -1,12 +1,11 @@
 import { PHS } from "./constants.js";
 
-export default function Conserjes({
-  conserjes, reportes, formCons, setFormCons,
-  selCons, setSelCons, notaCons, setNotaCons,
-  crearConserje, navTo, addToast,
-  setConserjes, actualizarReporte,
-  T, s,
-}) {
+import { useApp } from "./AppContext";
+import { useData } from "./DataContext";
+
+export default function Conserjes({ crearConserje, navTo, addToast, actualizarReporte }) {
+  const { T, s } = useApp();
+  const { conserjes, setConserjes, reportes, formCons, setFormCons, selCons, setSelCons, notaCons, setNotaCons } = useData();
   return (
     <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
 

@@ -3,15 +3,12 @@ import { supa } from "./supabase.js";
 
 const COLORES = ["#2563EB","#7C3AED","#0891B2","#059669","#D97706","#DC2626","#9333EA","#0D9488"];
 
-export default function DiarioCampo({
-  formDiario, setFormDiario,
-  formBloque, setFormBloque,
-  diarios, setDiarios, setOrdenes,
-  diarioEditId, setDiarioEditId,
-  usuario, navTo, addToast, fmtHora,
-  dbOnline, LOGO_B64,
-  T, s,
-}) {
+import { useApp } from "./AppContext";
+import { useData } from "./DataContext";
+
+export default function DiarioCampo({ navTo, addToast, fmtHora, LOGO_B64 }) {
+  const { T, s, usuario, dbOnline } = useApp();
+  const { formDiario, setFormDiario, formBloque, setFormBloque, diarios, setDiarios, setOrdenes, diarioEditId, setDiarioEditId } = useData();
 
             const agregarBloque = () => {
               if(!formBloque.hallazgos&&!formBloque.ordenes&&!formBloque.accionesTomadas)

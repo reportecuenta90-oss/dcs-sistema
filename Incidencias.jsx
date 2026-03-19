@@ -2,14 +2,12 @@ import { CALLES, TIPOS_INCIDENCIA, URGENCIAS } from "./constants.js";
 import { SUPA_URL, SUPA_KEY } from "./supabase.js";
 import SelectConOtro from "./SelectConOtro.jsx";
 
-export default function Incidencias({
-  incidencias, formInc, setFormInc,
-  incCalleOtro, setIncCalleOtro,
-  incTipoOtro, setIncTipoOtro,
-  crearIncidencia, setSelInc, navTo,
-  dbOnline, addToast,
-  usuario, T, s,
-}) {
+import { useApp } from "./AppContext";
+import { useData } from "./DataContext";
+
+export default function Incidencias({ crearIncidencia, navTo, addToast }) {
+  const { T, s, usuario, dbOnline } = useApp();
+  const { incidencias, formInc, setFormInc, incCalleOtro, setIncCalleOtro, incTipoOtro, setIncTipoOtro, setSelInc } = useData();
   const esGestor = usuario.rol === "admin" || usuario.rol === "ingeniera";
   const lista = esGestor ? incidencias : incidencias.filter(i => i.autor === usuario.nombre);
 

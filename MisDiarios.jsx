@@ -2,13 +2,12 @@ import { PHS } from "./constants.js";
 
 const COLORES = ["#2563EB","#7C3AED","#0891B2","#059669","#D97706","#DC2626","#9333EA","#0D9488"];
 
-export default function MisDiarios({
-  diarios, usuario, navTo, addToast,
-  diarFD, setDiarFD, diarFH, setDiarFH, diarPHF, setDiarPHF,
-  setFormDiario, setDiarioEditId, setDiarioPreview,
-  LOGO_B64,
-  T, s,
-}) {
+import { useApp } from "./AppContext";
+import { useData } from "./DataContext";
+
+export default function MisDiarios({ navTo, addToast, LOGO_B64 }) {
+  const { T, s, usuario } = useApp();
+  const { diarios, diarFD, setDiarFD, diarFH, setDiarFH, diarPHF, setDiarPHF, setFormDiario, setDiarioEditId, setDiarioPreview } = useData();
   const exportarDiarioPDF = (d) => {
     const hoy = new Date().toLocaleDateString("es", { year: "numeric", month: "long", day: "numeric" });
     const fechaDisplay = new Date(d.fecha + "T00:00:00").toLocaleDateString("es", { weekday: "long", year: "numeric", month: "long", day: "numeric" });

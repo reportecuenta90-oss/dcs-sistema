@@ -1,8 +1,9 @@
-export default function DetalleIncidencia({
-  selInc, setSelInc, incidencias,
-  actualizarIncidencia, addToast,
-  usuario, T, s,
-}) {
+import { useApp } from "./AppContext";
+import { useData } from "./DataContext";
+
+export default function DetalleIncidencia({ actualizarIncidencia, addToast }) {
+  const { T, s, usuario } = useApp();
+  const { selInc, setSelInc, incidencias } = useData();
   const urgCfg = {
     Normal:     { bg: T.successMuted, text: T.successText, border: `${T.successBase}33`, icon: "🟢" },
     Urgente:    { bg: T.warningMuted, text: T.warningText, border: `${T.warningBase}33`, icon: "🟡" },
